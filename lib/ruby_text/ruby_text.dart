@@ -14,7 +14,7 @@ class RubySpanWidget extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final defaultTextStyle = DefaultTextStyle.of(context).style;
-    final boldTextOverride = MediaQuery.boldTextOverride(context);
+    final boldTextOverride = MediaQuery.boldTextOf(context);
 
     final result = useMemoized(
       () {
