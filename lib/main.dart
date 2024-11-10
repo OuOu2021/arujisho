@@ -37,13 +37,36 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         title: 'ある辞書',
         theme: isRelease
-            ? ThemeData(primarySwatch: Colors.blue, fontFamily: "NotoSansJP")
+            ? ThemeData(
+                primarySwatch: Colors.blue,
+                primaryColorLight: Colors.blue,
+                primaryColorDark: Colors.blue,
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Colors.blue,
+                ),
+                inputDecorationTheme: const InputDecorationTheme(
+                  fillColor: Colors.white,
+                ),
+                fontFamily: "NotoSansJP")
             : ThemeData(
                 colorScheme: ColorScheme.fromSwatch().copyWith(
                   primary: Colors.pink[300],
                   secondary: Colors.pinkAccent[100],
                 ),
                 fontFamily: "NotoSansJP"),
+        darkTheme: ThemeData(
+            primarySwatch: Colors.blue,
+            brightness: Brightness.dark,
+            primaryColorDark: Colors.blue,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.black,
+            ),
+            // 配置深色主题
+            scaffoldBackgroundColor: Colors.white12,
+            fontFamily: "NotoSansJP"
+            // 其他主题属性
+            ),
+        themeMode: ThemeMode.system,
         initialRoute: '/splash',
         routes: {
           '/': (context) => const MyHomePage(),
@@ -462,7 +485,8 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text("ある辞書", style: TextStyle(fontSize: 20)),
+            title: const Text("ある辞書",
+                style: TextStyle(color: Colors.white, fontSize: 20)),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(48.0),
               child: Row(
@@ -471,7 +495,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Container(
                       margin: const EdgeInsets.only(left: 12.0, bottom: 8.0),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        border: Border.all(color: Colors.white, width: 2.0),
                         borderRadius: BorderRadius.circular(24.0),
                       ),
                       child: TextFormField(
@@ -574,7 +598,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             'WHERE ($searchField MATCH "${snapshot.data}*" OR r$searchField '
                             'MATCH "${String.fromCharCodes(snapshot.data.runes.toList().reversed)}*") '
                             '${(_searchMode > 0 ? "AND _rowid_ >= $_searchMode" : "")} '
-                            'ORDER BY _rowid_ LIMIT $nextIndex, ${2*pageSize}'
+                            'ORDER BY _rowid_ LIMIT $nextIndex, ${2 * pageSize}'
                             ') AS tt ON tt.idex=imis._rowid_)',
                           ));
                         } else {
