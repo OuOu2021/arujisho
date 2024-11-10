@@ -134,25 +134,39 @@ class DictionaryTerm extends StatefulWidget {
   final String dictName;
   final String imi;
   final Function(String) queryWord;
+  final bool initialExpanded;
 
-  const DictionaryTerm(
-      {Key? key,
-      required this.dictName,
-      required this.imi,
-      required this.queryWord})
-      : super(key: key);
+  const DictionaryTerm({
+    Key? key,
+    required this.dictName,
+    required this.imi,
+    required this.queryWord,
+    this.initialExpanded = false,
+  }) : super(key: key);
 
   @override
   _DictionaryTermState createState() => _DictionaryTermState();
 }
 
 class _DictionaryTermState extends State<DictionaryTerm> {
-  final ExpandableController _expandControl = ExpandableController(
-    initialExpanded: true,
-  );
+  late final ExpandableController _expandControl;
   List<List<Map<String, String>>>? tokens;
   bool showFurigana = false;
   static const _kanaKit = KanaKit();
+
+  @override
+  void initState() {
+    super.initState();
+    _expandControl = ExpandableController(
+      initialExpanded: widget.initialExpanded,
+    );
+  }
+
+  @override
+  void dispose() {
+    _expandControl.dispose();
+    super.dispose();
+  }
 
   _doMorphAnalyze() async {
     String sp = Path.join(
@@ -725,14 +739,24 @@ class _MyHomePageState extends State<MyHomePage> {
                                     : Text((item['freqRank'] + 1).toString()),
                                 subtitle: Text("${item['yomikata']} "
                                     "$pitchData"),
-                                children: imi.keys
-                                    .map<List<Widget>>((s) => List<List<Widget>>.from(imi[s].map((simi) => <Widget>[
-                                          DictionaryTerm(
-                                              dictName: s,
-                                              imi: simi,
-                                              queryWord: _setSearchContent),
-                                        ])).reduce((a, b) => a + b))
-                                    .reduce((a, b) => a + b),
+                                children: List.from(imi.keys).asMap().entries.map<List<Widget>>((s) {
+                                  int index1 = s.key;
+                                  final cont = s.value;
+                                  return List<List<Widget>>.from(
+                                    imi[cont].asMap().entries.map((entry) {
+                                      int index2 = entry.key;
+                                      final simi = entry.value;
+                                      return <Widget>[
+                                        DictionaryTerm(
+                                          dictName: cont,
+                                          imi: simi,
+                                          queryWord: _setSearchContent,
+                                          initialExpanded: index1 < 3,
+                                        )
+                                      ];
+                                    }),
+                                  ).reduce((a, b) => a + b);
+                                }).reduce((a, b) => a + b),
                                 onExpansionChanged: (expanded) {
                                   FocusManager.instance.primaryFocus?.unfocus();
                                   setState(() => item['expanded'] = expanded);
