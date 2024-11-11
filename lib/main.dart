@@ -547,12 +547,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                   return AlertDialog(
                                     title: const Text('頻度コントロール'),
                                     content: TextField(
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                            RegExp("[0-9]")),
+                                      ],
                                       onChanged: (value) {
-                                        int v = 0;
-                                        try {
-                                          v = int.parse(value);
-                                          assert(v > 0);
-                                        } catch (_) {}
+                                        int v = int.parse(value);
                                         setState(() {
                                           _searchMode = v;
                                         });
