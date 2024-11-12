@@ -470,14 +470,14 @@ class MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      if (_debounce?.isActive ?? false) return;
-      _debounce = Timer(const Duration(milliseconds: 300), () {
-        setState(() {
-          _search(0);
-        });
-      });
-    });
+    // _controller.addListener(() {
+    //   if (_debounce?.isActive ?? false) return;
+    //   _debounce = Timer(const Duration(milliseconds: 300), () {
+    //     setState(() {
+    //       _search(0);
+    //     });
+    //   });
+    // });
     database;
     ClipboardListener.addListener(_cpListener);
   }
