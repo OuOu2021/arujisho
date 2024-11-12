@@ -82,16 +82,20 @@ typedef ItemBuilder<T> = Widget Function(
 class InfiniteList<T> extends StatefulWidget {
   final RequestFn<T> onRequest;
   final ItemBuilder<T> itemBuilder;
+  final String content;
 
-  const InfiniteList(
-      {Key? key, required this.onRequest, required this.itemBuilder})
-      : super(key: key);
+  const InfiniteList({
+    Key? key,
+    required this.onRequest,
+    required this.itemBuilder,
+    required this.content,
+  }) : super(key: key);
 
   @override
-  _InfiniteListState<T> createState() => _InfiniteListState<T>();
+  InfiniteListState<T> createState() => InfiniteListState<T>();
 }
 
-class _InfiniteListState<T> extends State<InfiniteList<T>> {
+class InfiniteListState<T> extends State<InfiniteList<T>> {
   List<T> items = [];
   bool end = false;
 
@@ -145,10 +149,10 @@ class DictionaryTerm extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _DictionaryTermState createState() => _DictionaryTermState();
+  DictionaryTermState createState() => DictionaryTermState();
 }
 
-class _DictionaryTermState extends State<DictionaryTerm> {
+class DictionaryTermState extends State<DictionaryTerm> {
   late final ExpandableController _expandControl;
   List<List<Map<String, String>>>? tokens;
   bool showFurigana = false;
@@ -291,12 +295,11 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  MyHomePageState createState() => MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller = TextEditingController();
-  final StreamController _streamController = StreamController();
   final List<String> _history = [''];
   final Map<int, String?> _hatsuonCache = {};
   static const _kanaKit = KanaKit();
@@ -315,7 +318,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _search(int mode) async {
     if (_controller.text.isEmpty) {
-      _streamController.add(null);
+      _controller.text = "";
       return;
     }
     if (_history.isEmpty || _history.last != _controller.text) {
@@ -330,7 +333,8 @@ class _MyHomePageState extends State<MyHomePage> {
         .split('')
         .map<String>((c) => (cjdc.containsKey(c) ? cjdc[c]! : c))
         .join();
-    _streamController.add(s);
+    _controller.text = s;
+    setState(() {});
   }
 
   void _hatsuon(Map item) async {
@@ -469,10 +473,12 @@ class _MyHomePageState extends State<MyHomePage> {
     _controller.addListener(() {
       if (_debounce?.isActive ?? false) return;
       _debounce = Timer(const Duration(milliseconds: 300), () {
-        _search(0);
+        setState(() {
+          _search(0);
+        });
       });
-      setState(() {});
     });
+    database;
     ClipboardListener.addListener(_cpListener);
   }
 
@@ -498,273 +504,261 @@ class _MyHomePageState extends State<MyHomePage> {
           return false;
         },
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text("ある辞書",
-                style: TextStyle(color: Colors.white, fontSize: 20)),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(48.0),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 12.0, bottom: 8.0),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 2.0),
-                        borderRadius: BorderRadius.circular(24.0),
-                      ),
-                      child: TextFormField(
-                        controller: _controller,
-                        textAlignVertical: TextAlignVertical.center,
-                        decoration: InputDecoration(
-                          hintText: "調べたい言葉をご入力してください",
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(20, 12, 12, 12),
-                          border: InputBorder.none,
-                          suffixIcon: _controller.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  icon: const Icon(Icons.clear, size: 20),
-                                  onPressed: () {
-                                    setState(() => _controller.clear());
-                                  },
-                                ),
+            appBar: AppBar(
+              title: const Text("ある辞書",
+                  style: TextStyle(color: Colors.white, fontSize: 20)),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48.0),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 12.0, bottom: 8.0),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white, width: 2.0),
+                          borderRadius: BorderRadius.circular(24.0),
+                        ),
+                        child: TextFormField(
+                          controller: _controller,
+                          textAlignVertical: TextAlignVertical.center,
+                          decoration: InputDecoration(
+                            hintText: "調べたい言葉をご入力してください",
+                            contentPadding:
+                                const EdgeInsets.fromLTRB(20, 12, 12, 12),
+                            border: InputBorder.none,
+                            suffixIcon: _controller.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(Icons.clear, size: 20),
+                                    onPressed: () {
+                                      setState(() => _controller.clear());
+                                    },
+                                  ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: InkWell(
-                            onTap: () {
-                              _search(-1);
-                            },
-                            onLongPress: () => showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: const Text('頻度コントロール'),
-                                    content: TextField(
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.allow(
-                                            RegExp("[0-9]")),
-                                      ],
-                                      onChanged: (value) {
-                                        int v = int.parse(value);
-                                        setState(() {
-                                          _searchMode = v;
-                                        });
-                                      },
-                                      decoration: const InputDecoration(
-                                          hintText: "頻度ランク（正整数）"),
-                                    ),
-                                  );
-                                }),
-                            child: Ink(
-                                child: const Icon(
-                              BootstrapIcons.sort_down_alt,
-                              color: Colors.white,
-                            )),
-                          )))
-                ],
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: InkWell(
+                              onTap: () {
+                                _search(-1);
+                              },
+                              onLongPress: () => showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('頻度コントロール'),
+                                      content: TextField(
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp("[0-9]")),
+                                        ],
+                                        onChanged: (value) {
+                                          int v = int.parse(value);
+                                          setState(() {
+                                            _searchMode = v;
+                                          });
+                                        },
+                                        decoration: const InputDecoration(
+                                            hintText: "頻度ランク（正整数）"),
+                                      ),
+                                    );
+                                  }),
+                              child: Ink(
+                                  child: const Icon(
+                                BootstrapIcons.sort_down_alt,
+                                color: Colors.white,
+                              )),
+                            )))
+                  ],
+                ),
               ),
             ),
-          ),
-          body: Container(
+            body: Container(
               margin: const EdgeInsets.all(8.0),
-              child: StreamBuilder(
-                  stream: _streamController.stream,
-                  builder: (BuildContext ctx, AsyncSnapshot snapshot) {
-                    if (snapshot.data == null) {
-                      return const Center(
-                        child: Text("ご参考になりましたら幸いです"),
-                      );
+              child: InfiniteList<Map>(
+                content: _controller.text,
+                onRequest: (int nextIndex) async {
+                  const pageSize = 18;
+                  if (nextIndex % pageSize != 0) {
+                    return [];
+                  }
+                  Database db = await database;
+                  String searchField = 'word';
+                  String method = "MATCH";
+                  List<Map> result = <Map>[];
+                  final data = _controller.text;
+                  if (data.toLowerCase().contains(RegExp(r'^[a-z]+$'))) {
+                    searchField = 'romaji';
+                  } else if (data.contains(RegExp(r'^[ぁ-ゖー]+$'))) {
+                    searchField = 'yomikata';
+                  } else if (data.contains(RegExp(r'[\.\+\[\]\*\^\$\?]'))) {
+                    method = 'REGEXP';
+                  } else if (data.contains(RegExp(r'[_%]'))) {
+                    method = 'LIKE';
+                  }
+                  try {
+                    if (method == "MATCH") {
+                      result = List.of(await db.rawQuery(
+                        'SELECT tt.word,tt.yomikata,tt.pitchData,'
+                        'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
+                        'FROM (imis JOIN (SELECT * FROM jpdc '
+                        'WHERE ($searchField MATCH "$data*" OR r$searchField '
+                        'MATCH "${String.fromCharCodes(data.runes.toList().reversed)}*") '
+                        '${(_searchMode > 0 ? "AND _rowid_ >= $_searchMode" : "")} '
+                        'ORDER BY _rowid_ LIMIT $nextIndex, ${2 * pageSize}'
+                        ') AS tt ON tt.idex=imis._rowid_)',
+                      ));
+                    } else {
+                      result = List.of(await db.rawQuery(
+                        'SELECT tt.word,tt.yomikata,tt.pitchData,'
+                        'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
+                        'FROM (imis JOIN (SELECT * FROM jpdc '
+                        'WHERE (word $method "$data" '
+                        'OR yomikata $method "$data" '
+                        'OR romaji $method "$data") '
+                        '${(_searchMode > 0 ? "AND _rowid_ >= $_searchMode" : "")} '
+                        'ORDER BY _rowid_ LIMIT $nextIndex, $pageSize'
+                        ') AS tt ON tt.idex=imis._rowid_)',
+                      ));
                     }
-                    Future<List<Map>> queryAuto(int nextIndex) async {
-                      const pageSize = 18;
-                      if (nextIndex % pageSize != 0) {
-                        return [];
-                      }
-                      Database db = await database;
-                      String searchField = 'word';
-                      String method = "MATCH";
-                      List<Map> result = <Map>[];
-                      if (snapshot.data
-                          .toLowerCase()
-                          .contains(RegExp(r'^[a-z]+$'))) {
-                        searchField = 'romaji';
-                      } else if (snapshot.data.contains(RegExp(r'^[ぁ-ゖー]+$'))) {
-                        searchField = 'yomikata';
-                      } else if (snapshot.data
-                          .contains(RegExp(r'[\.\+\[\]\*\^\$\?]'))) {
-                        method = 'REGEXP';
-                      } else if (snapshot.data.contains(RegExp(r'[_%]'))) {
-                        method = 'LIKE';
-                      }
-                      try {
-                        if (method == "MATCH") {
-                          result = List.of(await db.rawQuery(
-                            'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                            'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                            'FROM (imis JOIN (SELECT * FROM jpdc '
-                            'WHERE ($searchField MATCH "${snapshot.data}*" OR r$searchField '
-                            'MATCH "${String.fromCharCodes(snapshot.data.runes.toList().reversed)}*") '
-                            '${(_searchMode > 0 ? "AND _rowid_ >= $_searchMode" : "")} '
-                            'ORDER BY _rowid_ LIMIT $nextIndex, ${2 * pageSize}'
-                            ') AS tt ON tt.idex=imis._rowid_)',
-                          ));
-                        } else {
-                          result = List.of(await db.rawQuery(
-                            'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                            'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                            'FROM (imis JOIN (SELECT * FROM jpdc '
-                            'WHERE (word $method "${snapshot.data}" '
-                            'OR yomikata $method "${snapshot.data}" '
-                            'OR romaji $method "${snapshot.data}") '
-                            '${(_searchMode > 0 ? "AND _rowid_ >= $_searchMode" : "")} '
-                            'ORDER BY _rowid_ LIMIT $nextIndex, $pageSize'
-                            ') AS tt ON tt.idex=imis._rowid_)',
-                          ));
-                        }
-                        result = result.map((qRow) {
-                          Map map = {};
-                          qRow.forEach((key, value) => map[key] = value);
-                          return map;
-                        }).toList();
-                        int balancedWeight(Map item, int bLen) {
-                          return (item['freqRank'] *
-                                  (item[searchField]
-                                              .startsWith(snapshot.data) &&
-                                          _searchMode == 0
-                                      ? 100
-                                      : 500) *
-                                  pow(1.5 + item['yomikata'].length / bLen,
-                                      _searchMode == 0 ? 2.5 : 0))
-                              .round();
-                        }
-
-                        int bLen = 1 << 31;
-                        for (var w in result) {
-                          if (w['yomikata'].length < bLen) {
-                            bLen = w['yomikata'].length;
-                          }
-                        }
-                        result.sort((a, b) => balancedWeight(a, bLen)
-                            .compareTo(balancedWeight(b, bLen)));
-                        return result;
-                      } catch (e) {
-                        return nextIndex == 0
-                            ? [
-                                {
-                                  'word': 'EXCEPTION',
-                                  'yomikata': '以下の説明をご覧ください',
-                                  'pitchData': '',
-                                  'freqRank': -1,
-                                  'idex': -1,
-                                  'romaji': '',
-                                  'orig': 'EXCEPTION',
-                                  'origForm': '',
-                                  'imi': jsonEncode({
-                                    'ヘルプ': [
-                                      "LIKE 検索:\n"
-                                          "    _  任意の1文字\n"
-                                          "    %  任意の0文字以上の文字列\n"
-                                          "\n"
-                                          "REGEX 検索:\n"
-                                          "    .  任意の1文字\n"
-                                          "    .*  任意の0文字以上の文字列\n"
-                                          "    .+  任意の1文字以上の文字列\n"
-                                          "    \\pc	任意漢字\n"
-                                          "    \\ph	任意平仮名\n"
-                                          "    \\pk	任意片仮名\n"
-                                          "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
-                                          "\n"
-                                          "例えば：\n"
-                                          " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
-                                          " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
-                                    ],
-                                    'Debug': [e.toString()],
-                                  }),
-                                  'expanded': true
-                                }
-                              ]
-                            : [];
-                      }
+                    result = result.map((qRow) {
+                      Map map = {};
+                      qRow.forEach((key, value) => map[key] = value);
+                      return map;
+                    }).toList();
+                    int balancedWeight(Map item, int bLen) {
+                      return (item['freqRank'] *
+                              (item[searchField].startsWith(data) &&
+                                      _searchMode == 0
+                                  ? 100
+                                  : 500) *
+                              pow(1.5 + item['yomikata'].length / bLen,
+                                  _searchMode == 0 ? 2.5 : 0))
+                          .round();
                     }
 
-                    return InfiniteList<Map>(
-                      onRequest: queryAuto,
-                      itemBuilder: (context, item, index) {
-                        Map<String, dynamic> imi = jsonDecode(item['imi']);
-                        final String pitchData = item['pitchData'] != ''
-                            ? jsonDecode(item['pitchData'])
-                                .map((x) =>
-                                    x <= 20 ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x] : '?')
-                                .toList()
-                                .join()
-                            : '';
-                        final word = item['origForm'] == ''
-                            ? item['word']
-                            : item['origForm'];
+                    int bLen = 1 << 31;
+                    for (var w in result) {
+                      if (w['yomikata'].length < bLen) {
+                        bLen = w['yomikata'].length;
+                      }
+                    }
+                    result.sort((a, b) => balancedWeight(a, bLen)
+                        .compareTo(balancedWeight(b, bLen)));
+                    return result;
+                  } catch (e) {
+                    return nextIndex == 0
+                        ? [
+                            {
+                              'word': 'EXCEPTION',
+                              'yomikata': '以下の説明をご覧ください',
+                              'pitchData': '',
+                              'freqRank': -1,
+                              'idex': -1,
+                              'romaji': '',
+                              'orig': 'EXCEPTION',
+                              'origForm': '',
+                              'imi': jsonEncode({
+                                'ヘルプ': [
+                                  "LIKE 検索:\n"
+                                      "    _  任意の1文字\n"
+                                      "    %  任意の0文字以上の文字列\n"
+                                      "\n"
+                                      "REGEX 検索:\n"
+                                      "    .  任意の1文字\n"
+                                      "    .*  任意の0文字以上の文字列\n"
+                                      "    .+  任意の1文字以上の文字列\n"
+                                      "    \\pc	任意漢字\n"
+                                      "    \\ph	任意平仮名\n"
+                                      "    \\pk	任意片仮名\n"
+                                      "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
+                                      "\n"
+                                      "例えば：\n"
+                                      " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
+                                      " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
+                                ],
+                                'Debug': [e.toString()],
+                              }),
+                              'expanded': true
+                            }
+                          ]
+                        : [];
+                  }
+                },
+                itemBuilder: (context, item, index) {
+                  Map<String, dynamic> imi = jsonDecode(item['imi']);
+                  final String pitchData = item['pitchData'] != ''
+                      ? jsonDecode(item['pitchData'])
+                          .map(
+                              (x) => x <= 20 ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x] : '?')
+                          .toList()
+                          .join()
+                      : '';
+                  final word =
+                      item['origForm'] == '' ? item['word'] : item['origForm'];
 
-                        return ListTileTheme(
-                            dense: true,
-                            child: ExpansionTile(
-                                initiallyExpanded:
-                                    item.containsKey('expanded') &&
-                                        item['expanded'],
-                                title: Text(word == item['orig']
-                                    ? word
-                                    : '$word →〔${item['orig']}〕'),
-                                trailing: item.containsKey('expanded') &&
-                                        item['freqRank'] != -1 &&
-                                        item['expanded']
-                                    ? Container(
-                                        padding: const EdgeInsets.all(0.0),
-                                        width: 35.0,
-                                        child: item.containsKey('loading') &&
-                                                item['loading']
-                                            ? const CircularProgressIndicator()
-                                            : IconButton(
-                                                icon: _hatsuonCache.containsKey(
-                                                            item['idex']) &&
-                                                        _hatsuonCache[
-                                                                item['idex']] ==
-                                                            null
-                                                    ? const Icon(Icons.error_outline)
-                                                    : const Icon(IcoFontIcons.soundWaveAlt),
-                                                onPressed: () => _hatsuon(item)))
-                                    : Text((item['freqRank'] + 1).toString()),
-                                subtitle: Text("${item['yomikata']} "
-                                    "$pitchData"),
-                                children: List.from(imi.keys).asMap().entries.map<List<Widget>>((s) {
-                                  int index1 = s.key;
-                                  final cont = s.value;
-                                  return List<List<Widget>>.from(
-                                    imi[cont].asMap().entries.map((entry) {
-                                      int index2 = entry.key;
-                                      final simi = entry.value;
-                                      return <Widget>[
-                                        DictionaryTerm(
-                                          dictName: cont,
-                                          imi: simi,
-                                          queryWord: _setSearchContent,
-                                          initialExpanded: index1 < 3,
-                                        )
-                                      ];
-                                    }),
-                                  ).reduce((a, b) => a + b);
-                                }).reduce((a, b) => a + b),
-                                onExpansionChanged: (expanded) {
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  setState(() => item['expanded'] = expanded);
-                                }));
-                      },
-                      key: ValueKey('$snapshot.data $_searchMode'),
-                    );
-                  })),
-        ));
+                  return ListTileTheme(
+                      dense: true,
+                      child: ExpansionTile(
+                          initiallyExpanded:
+                              item.containsKey('expanded') && item['expanded'],
+                          title: Text(word == item['orig']
+                              ? word
+                              : '$word →〔${item['orig']}〕'),
+                          trailing: item.containsKey('expanded') &&
+                                  item['freqRank'] != -1 &&
+                                  item['expanded']
+                              ? Container(
+                                  padding: const EdgeInsets.all(0.0),
+                                  width: 35.0,
+                                  child: item.containsKey('loading') &&
+                                          item['loading']
+                                      ? const CircularProgressIndicator()
+                                      : IconButton(
+                                          icon: _hatsuonCache.containsKey(
+                                                      item['idex']) &&
+                                                  _hatsuonCache[item['idex']] ==
+                                                      null
+                                              ? const Icon(Icons.error_outline)
+                                              : const Icon(
+                                                  IcoFontIcons.soundWaveAlt),
+                                          onPressed: () => _hatsuon(item)))
+                              : Text((item['freqRank'] + 1).toString()),
+                          subtitle: Text("${item['yomikata']} "
+                              "$pitchData"),
+                          children: List.from(imi.keys)
+                              .asMap()
+                              .entries
+                              .map<List<Widget>>((s) {
+                            int index1 = s.key;
+                            final cont = s.value;
+                            return List<List<Widget>>.from(
+                              imi[cont].asMap().entries.map((entry) {
+                                int index2 = entry.key;
+                                final simi = entry.value;
+                                return <Widget>[
+                                  DictionaryTerm(
+                                    dictName: cont,
+                                    imi: simi,
+                                    queryWord: _setSearchContent,
+                                    initialExpanded: index1 < 3,
+                                  )
+                                ];
+                              }),
+                            ).reduce((a, b) => a + b);
+                          }).reduce((a, b) => a + b),
+                          onExpansionChanged: (expanded) {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            setState(() => item['expanded'] = expanded);
+                          }));
+                },
+                key: ValueKey('$_controller.text $_searchMode'),
+              ),
+            )));
   }
 }
