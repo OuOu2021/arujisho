@@ -75,20 +75,20 @@ class MyApp extends StatelessWidget {
   }
 }
 
-typedef RequestFn<T> = Future<List<T>> Function(int nextIndex);
+typedef RequestFn<T> = Future<List<T>> Function(String data, int nextIndex);
 typedef ItemBuilder<T> = Widget Function(
     BuildContext context, T item, int index);
 
 class InfiniteList<T> extends StatefulWidget {
   final RequestFn<T> onRequest;
   final ItemBuilder<T> itemBuilder;
-  final String content;
+  final ValueNotifier<String> textNotifier;
 
   const InfiniteList({
     Key? key,
     required this.onRequest,
     required this.itemBuilder,
-    required this.content,
+    required this.textNotifier,
   }) : super(key: key);
 
   @override
@@ -98,9 +98,10 @@ class InfiniteList<T> extends StatefulWidget {
 class InfiniteListState<T> extends State<InfiniteList<T>> {
   List<T> items = [];
   bool end = false;
+  late String _displayText;
 
   _getMoreItems() async {
-    final moreItems = await widget.onRequest(items.length);
+    final moreItems = await widget.onRequest(_displayText, items.length);
     if (!mounted) return;
 
     if (moreItems.isEmpty) {
@@ -108,6 +109,27 @@ class InfiniteListState<T> extends State<InfiniteList<T>> {
       return;
     }
     setState(() => items = [...items, ...moreItems]);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化时同步 textNotifier 的初始值
+    _displayText = widget.textNotifier.value;
+    // 监听 textNotifier 的变化并更新 WidgetB 的状态
+    widget.textNotifier.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.textNotifier.removeListener(_onTextChanged); // 移除监听器
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      _displayText = widget.textNotifier.value;
+    });
   }
 
   @override
@@ -300,6 +322,7 @@ class MyHomePage extends StatefulWidget {
 
 class MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller = TextEditingController();
+  late ValueNotifier<String> _textNotifier;
   final List<String> _history = [''];
   final Map<int, String?> _hatsuonCache = {};
   static const _kanaKit = KanaKit();
@@ -334,7 +357,6 @@ class MyHomePageState extends State<MyHomePage> {
         .map<String>((c) => (cjdc.containsKey(c) ? cjdc[c]! : c))
         .join();
     _controller.text = s;
-    setState(() {});
   }
 
   void _hatsuon(Map item) async {
@@ -470,6 +492,10 @@ class MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _textNotifier = ValueNotifier('');
+    _controller.addListener(() {
+      _textNotifier.value = _controller.text;
+    });
     // _controller.addListener(() {
     //   if (_debounce?.isActive ?? false) return;
     //   _debounce = Timer(const Duration(milliseconds: 300), () {
@@ -486,6 +512,7 @@ class MyHomePageState extends State<MyHomePage> {
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _textNotifier.dispose();
     ClipboardListener.removeListener(_cpListener);
     super.dispose();
   }
@@ -545,7 +572,9 @@ class MyHomePageState extends State<MyHomePage> {
                             height: 48,
                             child: InkWell(
                               onTap: () {
-                                _search(-1);
+                                setState(() {
+                                  _search(0);
+                                });
                               },
                               onLongPress: () => showDialog(
                                   context: context,
@@ -570,7 +599,8 @@ class MyHomePageState extends State<MyHomePage> {
                                   }),
                               child: Ink(
                                   child: const Icon(
-                                BootstrapIcons.sort_down_alt,
+                                // BootstrapIcons.sort_down_alt,
+                                Icons.search,
                                 color: Colors.white,
                               )),
                             )))
@@ -581,8 +611,8 @@ class MyHomePageState extends State<MyHomePage> {
             body: Container(
               margin: const EdgeInsets.all(8.0),
               child: InfiniteList<Map>(
-                content: _controller.text,
-                onRequest: (int nextIndex) async {
+                textNotifier: _textNotifier,
+                onRequest: (String data, int nextIndex) async {
                   const pageSize = 18;
                   if (nextIndex % pageSize != 0) {
                     return [];
@@ -591,7 +621,6 @@ class MyHomePageState extends State<MyHomePage> {
                   String searchField = 'word';
                   String method = "MATCH";
                   List<Map> result = <Map>[];
-                  final data = _controller.text;
                   if (data.toLowerCase().contains(RegExp(r'^[a-z]+$'))) {
                     searchField = 'romaji';
                   } else if (data.contains(RegExp(r'^[ぁ-ゖー]+$'))) {
