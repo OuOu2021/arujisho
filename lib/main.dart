@@ -999,7 +999,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   items: [
                     const DropdownMenuItem<int?>(
-                      value: null,
+                      value: 999,
                       child: Text('すべて展開表示'),
                     ),
                     ...List.generate(6, (index) {
