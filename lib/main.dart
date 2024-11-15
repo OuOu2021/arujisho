@@ -102,7 +102,7 @@ class DisplayItemCountNotifier extends ChangeNotifier {
     notifyListeners(); // Notify listeners after loading the theme mode
   }
 
-  Future<void> setDisplayItemCount(int i) async {
+  Future<void> setDisplayItemCount(int? i) async {
     _displayItemCount = i;
     await _saveDisplayItemCount();
     notifyListeners();
@@ -149,7 +149,7 @@ class ExpandedItemCountNotifier extends ChangeNotifier {
 
   Future<void> _saveExpandedItemCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt(_expandedItemCountKey, _expandedItemCount!);
+    prefs.setInt(_expandedItemCountKey, _expandedItemCount);
   }
 
   Future<void> _loadExpandedItemCount() async {
@@ -951,20 +951,67 @@ class _MyHomePageState extends State<MyHomePage> {
           // 显示条目数
           ListTile(
             leading: const Icon(Icons.list),
-            title: const Text('表示件数'),
-            onTap: () {
-              Navigator.pop(context); // 关闭Drawer
-              _showDisplayCountDialog(context);
-            },
+            // title: const Text('表示件数'),
+            subtitle: Consumer<DisplayItemCountNotifier>(
+              builder: (context, displayProvider, child) {
+                return DropdownButtonFormField<int?>(
+                  value: displayProvider.displayItemCount,
+                  decoration: const InputDecoration(
+                    labelText: '表示件数',
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('すべて表示'),
+                    ),
+                    ...List.generate(6, (index) {
+                      int value = index + 1;
+                      return DropdownMenuItem<int?>(
+                        value: value,
+                        child: Text('$value'),
+                      );
+                    }),
+                  ],
+                  onChanged: (int? value) {
+                    displayProvider.setDisplayItemCount(value);
+                  },
+                );
+              },
+            ),
           ),
+
           // 详细显示条目数
           ListTile(
-            leading: const Icon(Icons.list_alt),
-            title: const Text('展開表示件数'),
-            onTap: () {
-              Navigator.pop(context); // 关闭Drawer
-              _showExpandedCountDialog(context);
-            },
+            leading: const Icon(Icons.list),
+            // title: const Text('展開件数'),
+            subtitle: Consumer<ExpandedItemCountNotifier>(
+              builder: (context, expendedProvider, child) {
+                return DropdownButtonFormField<int?>(
+                  value: expendedProvider.expandedItemCount,
+                  decoration: const InputDecoration(
+                    labelText: '展開件数',
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('すべて展開表示'),
+                    ),
+                    ...List.generate(6, (index) {
+                      int value = index + 1;
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text('$value'),
+                      );
+                    }),
+                  ],
+                  onChanged: (int? value) {
+                    if (value != null) {
+                      expendedProvider.setExpandedItemCount(value);
+                    }
+                  },
+                );
+              },
+            ),
           ),
           // 关于
           ListTile(
@@ -1027,96 +1074,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
               ),
             ],
-          ),
-        );
-      },
-    );
-  }
-
-  // 显示显示条目数设置对话框
-  Future<void> _showDisplayCountDialog(BuildContext context) async {
-    await showDialog(
-      context: context,
-      builder: (context) {
-        final displayItemCountNotifier =
-            Provider.of<DisplayItemCountNotifier>(context, listen: false);
-        int? selectedCount = displayItemCountNotifier.displayItemCount;
-        return AlertDialog(
-          title: const Text('表示条目数'),
-          content: DropdownButtonFormField<int?>(
-            value: selectedCount,
-            decoration: const InputDecoration(
-              labelText: '表示する条目数',
-            ),
-            items: [
-              const DropdownMenuItem<int?>(
-                value: null,
-                child: Text('すべて表示'),
-              ),
-              ...List.generate(6, (index) {
-                int value = index + 1;
-                return DropdownMenuItem<int?>(
-                  value: value,
-                  child: Text('$value'),
-                );
-              }),
-            ],
-            onChanged: (int? value) {
-              setState(() {
-                final displayItemCountNotifier =
-                    Provider.of<DisplayItemCountNotifier>(context,
-                        listen: false);
-                if (value != null) {
-                  displayItemCountNotifier.setDisplayItemCount(value);
-                }
-              });
-              Navigator.pop(context);
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  // 显示展开条目数设置对话框
-  Future<void> _showExpandedCountDialog(BuildContext context) async {
-    await showDialog(
-      context: context,
-      builder: (context) {
-        final expendedItemCountNotifier =
-            Provider.of<ExpandedItemCountNotifier>(context, listen: false);
-        int? selectedCount = expendedItemCountNotifier.expandedItemCount;
-        return AlertDialog(
-          title: const Text('展開表示条目数'),
-          content: DropdownButtonFormField<int?>(
-            value: selectedCount,
-            decoration: const InputDecoration(
-              labelText: '展開表示する条目数',
-            ),
-            items: [
-              const DropdownMenuItem<int?>(
-                value: 999,
-                child: Text('すべて展開表示'),
-              ),
-              ...List.generate(6, (index) {
-                int value = index + 1;
-                return DropdownMenuItem<int?>(
-                  value: value,
-                  child: Text('$value'),
-                );
-              }),
-            ],
-            onChanged: (int? value) {
-              setState(() {
-                final expendedItemCountNotifier =
-                    Provider.of<DisplayItemCountNotifier>(context,
-                        listen: false);
-                if (value != null) {
-                  expendedItemCountNotifier.setDisplayItemCount(value);
-                }
-              });
-              Navigator.pop(context);
-            },
           ),
         );
       },
