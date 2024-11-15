@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:clipboard_listener/clipboard_listener.dart';
 import 'package:html/parser.dart' show parse;
@@ -25,21 +26,60 @@ import 'package:arujisho/cjconvert.dart';
 import 'package:arujisho/ruby_text/ruby_text.dart';
 import 'package:arujisho/ruby_text/ruby_text_data.dart';
 
-void main() => runApp(
-      ChangeNotifierProvider(
-        create: (_) => ThemeNotifier(),
-        child: const MyApp(),
-      ),
-    );
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: const MyApp(),
+    ),
+  );
+}
 
 class ThemeNotifier extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
+  late ThemeMode _themeMode;
+  static const String _themeModeKey = 'themeMode';
 
   ThemeMode get themeMode => _themeMode;
 
-  void setThemeMode(ThemeMode mode) {
+  ThemeNotifier() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _loadThemeMode();
+    notifyListeners(); // Notify listeners after loading the theme mode
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
+    await _saveThemeMode();
     notifyListeners();
+  }
+
+  Future<void> _saveThemeMode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString(_themeModeKey, _themeMode.name);
+  }
+
+  Future<void> _loadThemeMode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? themeModeName = prefs.getString(_themeModeKey);
+    if (themeModeName != null) {
+      switch (themeModeName) {
+        case 'system':
+          _themeMode = ThemeMode.system;
+          break;
+        case 'light':
+          _themeMode = ThemeMode.light;
+          break;
+        case 'dark':
+          _themeMode = ThemeMode.dark;
+          break;
+      }
+    } else {
+      _themeMode = ThemeMode.system;
+    }
   }
 }
 
