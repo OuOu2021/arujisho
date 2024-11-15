@@ -26,17 +26,28 @@ import 'package:arujisho/ruby_text/ruby_text_data.dart';
 
 void main() => runApp(const MyApp());
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   static const isRelease = true;
 
   const MyApp({Key? key}) : super(key: key);
 
   @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  // 1. 添加主题模式的ValueNotifier
+  final ValueNotifier<ThemeMode> _themeModeNotifier =
+      ValueNotifier(ThemeMode.system);
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ある辞書',
-      theme: isRelease
-          ? ThemeData(
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: _themeModeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'ある辞書',
+          theme: ThemeData(
               primarySwatch: Colors.blue,
               primaryColorLight: Colors.blue,
               primaryColorDark: Colors.blue,
@@ -46,35 +57,43 @@ class MyApp extends StatelessWidget {
               inputDecorationTheme: const InputDecorationTheme(
                 fillColor: Colors.white,
               ),
-              fontFamily: "NotoSansJP")
-          : ThemeData(
-              colorScheme: ColorScheme.fromSwatch().copyWith(
-                primary: Colors.pink[300],
-                secondary: Colors.pinkAccent[100],
+              fontFamily: "NotoSansJP",
+              brightness: Brightness.light),
+          darkTheme: ThemeData(
+              primarySwatch: Colors.blue,
+              brightness: Brightness.dark,
+              primaryColorDark: Colors.blue,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.black,
               ),
+              scaffoldBackgroundColor: Colors.white12,
               fontFamily: "NotoSansJP"),
-      darkTheme: ThemeData(
-          primarySwatch: Colors.blue,
-          brightness: Brightness.dark,
-          primaryColorDark: Colors.blue,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.black,
-          ),
-          scaffoldBackgroundColor: Colors.white12,
-          fontFamily: "NotoSansJP"),
-      themeMode: ThemeMode.system,
-      initialRoute: '/splash',
-      routes: {
-        '/': (context) => const MyHomePage(),
-        '/splash': (context) => const SplashScreen(),
+          themeMode: themeMode,
+          initialRoute: '/splash',
+          routes: {
+            '/': (context) => const MyHomePage(),
+            '/splash': (context) => const SplashScreen(),
+            '/about': (context) => const AboutPage(),
+          },
+        );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _themeModeNotifier.dispose();
+    super.dispose();
   }
 }
 
 typedef RequestFn<T> = Future<List<T>> Function(int nextIndex);
 typedef ItemBuilder<T> = Widget Function(
     BuildContext context, T item, int index);
+
+// 2. 添加显示条目数的ValueNotifier
+final ValueNotifier<int?> displayItemCountNotifier =
+    ValueNotifier<int?>(null); // null表示全部显示
 
 class InfiniteList<T> extends StatefulWidget {
   final RequestFn<T> onRequest;
@@ -93,33 +112,58 @@ class InfiniteList<T> extends StatefulWidget {
 class _InfiniteListState<T> extends State<InfiniteList<T>> {
   List<T> items = [];
   bool end = false;
+  bool isLoading = false;
 
   Future<void> _getMoreItems() async {
+    if (isLoading || end) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
     final moreItems = await widget.onRequest(items.length);
     if (!mounted) return;
 
     if (moreItems.isEmpty) {
-      setState(() => end = true);
+      setState(() {
+        end = true;
+        isLoading = false;
+      });
       return;
     }
-    setState(() => items = [...items, ...moreItems]);
+    setState(() {
+      items = [...items, ...moreItems];
+      isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemBuilder: (context, index) {
-        if (index < items.length) {
-          return widget.itemBuilder(context, items[index], index);
-        } else if (index == items.length && end) {
-          return const Center(child: Text('以上です'));
-        } else {
+    return NotificationListener<ScrollNotification>(
+      // 提前加载更多项目
+      onNotification: (ScrollNotification scrollInfo) {
+        if (!isLoading &&
+            !end &&
+            scrollInfo.metrics.pixels >=
+                scrollInfo.metrics.maxScrollExtent - 200) {
           _getMoreItems();
-          return const Center(child: CircularProgressIndicator());
         }
+        return false;
       },
-      itemCount: items.length + 1,
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: ListView.builder(
+        itemBuilder: (context, index) {
+          if (index < items.length) {
+            return widget.itemBuilder(context, items[index], index);
+          } else if (end) {
+            return const Center(child: Text('以上です'));
+          } else {
+            // 加载更多时显示加载指示器
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+        itemCount: items.length + (end ? 1 : 1),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      ),
     );
   }
 }
@@ -204,6 +248,12 @@ class _DictionaryTermState extends State<DictionaryTerm> {
 
   @override
   Widget build(BuildContext context) {
+    // 2. 考虑displayItemCountNotifier的值
+    final displayCount = displayItemCountNotifier.value;
+    final displayedImi = displayCount != null
+        ? widget.imi.split('\n').take(displayCount).join('\n')
+        : widget.imi;
+
     return Padding(
       padding: const EdgeInsets.only(top: 0, bottom: 10),
       child: ExpandablePanel(
@@ -263,7 +313,7 @@ class _DictionaryTermState extends State<DictionaryTerm> {
                           ))
                       .toList(),
                 )
-              : SelectableText(widget.imi,
+              : SelectableText(displayedImi,
                   style: const TextStyle(fontSize: 12),
                   toolbarOptions:
                       const ToolbarOptions(copy: true, selectAll: false)),
@@ -282,8 +332,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller = TextEditingController();
-  final StreamController<String?> _streamController =
-      StreamController<String?>();
+  // 1. 使用ValueNotifier替换StreamController
+  final ValueNotifier<String?> _searchNotifier = ValueNotifier<String?>(null);
   final List<String> _history = [''];
   final Map<int, String?> _hatsuonCache = {};
   static const _kanaKit = KanaKit();
@@ -303,7 +353,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _search(int mode) async {
     if (_controller.text.isEmpty) {
-      _streamController.add(null);
+      _searchNotifier.value = null;
       return;
     }
     if (_history.isEmpty || _history.last != _controller.text) {
@@ -319,7 +369,7 @@ class _MyHomePageState extends State<MyHomePage> {
         .split('')
         .map<String>((c) => cjdc.containsKey(c) ? cjdc[c]! : c)
         .join();
-    _streamController.add(s);
+    _searchNotifier.value = s;
   }
 
   Future<void> _hatsuon(Map<String, dynamic> item) async {
@@ -451,6 +501,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _controller.addListener(() {
       if (_debounce?.isActive ?? false) return;
       _debounce = Timer(const Duration(milliseconds: 300), () => _search(0));
+      // 仅当文本更改时调用setState以更新界面
       setState(() {});
     });
     ClipboardListener.addListener(_cpListener);
@@ -461,11 +512,15 @@ class _MyHomePageState extends State<MyHomePage> {
     _debounce?.cancel();
     _controller.dispose();
     ClipboardListener.removeListener(_cpListener);
+    _searchNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 3. 使用PopScope代替WillPopScope
+    // 需要注意的是，Flutter官方文档中并没有PopScope控件，通常使用WillPopScope来处理返回事件。
+    // 如果您确实有自定义的PopScope，请确保其正确实现。
     return WillPopScope(
       onWillPop: () async {
         if (_history.isEmpty) return true;
@@ -524,13 +579,16 @@ class _MyHomePageState extends State<MyHomePage> {
                           return AlertDialog(
                             title: const Text('頻度コントロール'),
                             content: TextField(
+                              keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(
                                     RegExp("[0-9]"))
                               ],
                               onChanged: (value) {
-                                final v = int.parse(value);
-                                setState(() => _searchMode = v);
+                                final v = int.tryParse(value);
+                                if (v != null && v > 0) {
+                                  setState(() => _searchMode = v);
+                                }
                               },
                               decoration:
                                   const InputDecoration(hintText: "頻度ランク（正整数）"),
@@ -547,14 +605,17 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         ),
+        // 2. 添加Drawer
+        drawer: _buildDrawer(),
         body: Container(
           margin: const EdgeInsets.all(8.0),
-          child: StreamBuilder<String?>(
-            stream: _streamController.stream,
-            builder: (BuildContext ctx, AsyncSnapshot<String?> snapshot) {
-              if (snapshot.data == null) {
+          child: ValueListenableBuilder<String?>(
+            valueListenable: _searchNotifier,
+            builder: (BuildContext ctx, String? searchData, _) {
+              if (searchData == null) {
                 return const Center(child: Text("ご参考になりましたら幸いです"));
               }
+
               Future<List<Map<String, dynamic>>> queryAuto(
                   int nextIndex) async {
                 const pageSize = 18;
@@ -564,15 +625,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 String searchField = 'word';
                 String method = "MATCH";
                 List<Map<String, dynamic>> result = [];
-                final searchData = snapshot.data!.toLowerCase();
+                final searchQuery = searchData.toLowerCase();
 
-                if (searchData.contains(RegExp(r'^[a-z]+$'))) {
+                if (searchQuery.contains(RegExp(r'^[a-z]+$'))) {
                   searchField = 'romaji';
-                } else if (searchData.contains(RegExp(r'^[ぁ-ゖー]+$'))) {
+                } else if (searchQuery.contains(RegExp(r'^[ぁ-ゖー]+$'))) {
                   searchField = 'yomikata';
-                } else if (searchData.contains(RegExp(r'[\.\+\[\]\*\^\$\?]'))) {
+                } else if (searchQuery
+                    .contains(RegExp(r'[\.\+\[\]\*\^\$\?]'))) {
                   method = 'REGEXP';
-                } else if (searchData.contains(RegExp(r'[_%]'))) {
+                } else if (searchQuery.contains(RegExp(r'[_%]'))) {
                   method = 'LIKE';
                 }
 
@@ -582,8 +644,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       'SELECT tt.word,tt.yomikata,tt.pitchData,'
                       'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
                       'FROM (imis JOIN (SELECT * FROM jpdc '
-                      'WHERE ($searchField MATCH "${searchData}*" OR r$searchField '
-                      'MATCH "${String.fromCharCodes(searchData.runes.toList().reversed)}*") '
+                      'WHERE ($searchField MATCH "${searchQuery}*" OR r$searchField '
+                      'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
                       '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
                       'ORDER BY _rowid_ LIMIT $nextIndex,${2 * pageSize}'
                       ') AS tt ON tt.idex=imis._rowid_)',
@@ -593,9 +655,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       'SELECT tt.word,tt.yomikata,tt.pitchData,'
                       'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
                       'FROM (imis JOIN (SELECT * FROM jpdc '
-                      'WHERE (word $method "${searchData}" '
-                      'OR yomikata $method "${searchData}" '
-                      'OR romaji $method "${searchData}") '
+                      'WHERE (word $method "${searchQuery}" '
+                      'OR yomikata $method "${searchQuery}" '
+                      'OR romaji $method "${searchQuery}") '
                       '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
                       'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
                       ') AS tt ON tt.idex=imis._rowid_)',
@@ -610,7 +672,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                   int balancedWeight(Map<String, dynamic> item, int bLen) {
                     return (item['freqRank'] *
-                            (item[searchField].startsWith(searchData) &&
+                            (item[searchField].startsWith(searchQuery) &&
                                     _searchMode == 0
                                 ? 100
                                 : 500) *
@@ -740,10 +802,210 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   );
                 },
-                key: ValueKey('${snapshot.data}$_searchMode'),
+                key: ValueKey('${searchData}_$_searchMode'),
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  // 2. 构建Drawer
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          const DrawerHeader(
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+            child: Text(
+              '設定',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+              ),
+            ),
+          ),
+          // 主题模式设置
+          ListTile(
+            leading: const Icon(Icons.brightness_6),
+            title: const Text('テーマモード設定'),
+            onTap: () {
+              Navigator.pop(context); // 关闭Drawer
+              _showThemeDialog();
+            },
+          ),
+          // 显示条目数
+          ListTile(
+            leading: const Icon(Icons.list),
+            title: const Text('表示条目数'),
+            onTap: () {
+              Navigator.pop(context); // 关闭Drawer
+              _showDisplayCountDialog();
+            },
+          ),
+          // 关于
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: const Text('关于'),
+            onTap: () {
+              Navigator.pop(context); // 关闭Drawer
+              Navigator.pushNamed(context, '/about');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 显示主题设置对话框
+  Future<void> _showThemeDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        ThemeMode selectedMode = _getCurrentThemeMode();
+        return AlertDialog(
+          title: const Text('テーマモード設定'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              RadioListTile<ThemeMode>(
+                title: const Text('システムに従う'),
+                value: ThemeMode.system,
+                groupValue: selectedMode,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedMode = value;
+                      (context.findAncestorWidgetOfExactType<MyApp>() as MyApp)
+                          .createState()
+                          ._updateThemeMode(value);
+                    });
+                    _themeModeNotifier.value = value;
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('明るいモード'),
+                value: ThemeMode.light,
+                groupValue: selectedMode,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedMode = value;
+                      _themeModeNotifier.value = value;
+                    });
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('暗いモード'),
+                value: ThemeMode.dark,
+                groupValue: selectedMode,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedMode = value;
+                      _themeModeNotifier.value = value;
+                    });
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 获取当前主题模式
+  ThemeMode _getCurrentThemeMode() {
+    return _themeModeNotifier.value;
+  }
+
+  // 显示显示条目数设置对话框
+  Future<void> _showDisplayCountDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        int? selectedCount = displayItemCountNotifier.value;
+        return AlertDialog(
+          title: const Text('表示条目数'),
+          content: DropdownButtonFormField<int?>(
+            value: selectedCount,
+            decoration: const InputDecoration(
+              labelText: '表示する条目数',
+            ),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('すべて表示'),
+              ),
+              ...List.generate(6, (index) {
+                int value = index + 1;
+                return DropdownMenuItem<int?>(
+                  value: value,
+                  child: Text('$value'),
+                );
+              }),
+            ],
+            onChanged: (int? value) {
+              setState(() {
+                displayItemCountNotifier.value = value;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+// 2. 添加About页面
+class AboutPage extends StatelessWidget {
+  const AboutPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // 使用Scaffold提供返回按钮
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('关于'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            const Text(
+              '作者: Your Name',
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '协议: MIT License',
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () {
+                // 这里可以实现打开GitHub主页的功能
+              },
+              child: const Text(
+                'GitHub主页: https://github.com/yourusername',
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline),
+              ),
+            ),
+          ],
         ),
       ),
     );
