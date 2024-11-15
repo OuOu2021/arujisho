@@ -17,6 +17,7 @@ import 'package:crypto/crypto.dart' show sha256;
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:icofont_flutter/icofont_flutter.dart';
 import 'package:expandable/expandable.dart';
+import 'package:provider/provider.dart'; // 引入 Provider
 
 import 'package:arujisho/splash_screen.dart';
 import 'package:arujisho/ffi.io.dart';
@@ -24,66 +25,65 @@ import 'package:arujisho/cjconvert.dart';
 import 'package:arujisho/ruby_text/ruby_text.dart';
 import 'package:arujisho/ruby_text/ruby_text_data.dart';
 
-void main() => runApp(const MyApp());
+void main() => runApp(
+      ChangeNotifierProvider(
+        create: (_) => ThemeNotifier(),
+        child: const MyApp(),
+      ),
+    );
 
-class MyApp extends StatefulWidget {
+class ThemeNotifier extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  ThemeMode get themeMode => _themeMode;
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    notifyListeners();
+  }
+}
+
+class MyApp extends StatelessWidget {
   static const isRelease = true;
 
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  // 1. 添加主题模式的ValueNotifier
-  final ValueNotifier<ThemeMode> _themeModeNotifier =
-      ValueNotifier(ThemeMode.system);
-
-  @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: _themeModeNotifier,
-      builder: (context, themeMode, _) {
-        return MaterialApp(
-          title: 'ある辞書',
-          theme: ThemeData(
-              primarySwatch: Colors.blue,
-              primaryColorLight: Colors.blue,
-              primaryColorDark: Colors.blue,
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.blue,
-              ),
-              inputDecorationTheme: const InputDecorationTheme(
-                fillColor: Colors.white,
-              ),
-              fontFamily: "NotoSansJP",
-              brightness: Brightness.light),
-          darkTheme: ThemeData(
-              primarySwatch: Colors.blue,
-              brightness: Brightness.dark,
-              primaryColorDark: Colors.blue,
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.black,
-              ),
-              scaffoldBackgroundColor: Colors.white12,
-              fontFamily: "NotoSansJP"),
-          themeMode: themeMode,
-          initialRoute: '/splash',
-          routes: {
-            '/': (context) => const MyHomePage(),
-            '/splash': (context) => const SplashScreen(),
-            '/about': (context) => const AboutPage(),
-          },
-        );
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    return MaterialApp(
+      title: 'ある辞書',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        primaryColorLight: Colors.blue,
+        primaryColorDark: Colors.blue,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blue,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          fillColor: Colors.white,
+        ),
+        fontFamily: "NotoSansJP",
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        primaryColorDark: Colors.blue,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+        ),
+        scaffoldBackgroundColor: Colors.white12,
+        fontFamily: "NotoSansJP",
+      ),
+      themeMode: themeNotifier.themeMode,
+      initialRoute: '/splash',
+      routes: {
+        '/': (context) => const MyHomePage(),
+        '/splash': (context) => const SplashScreen(),
+        '/about': (context) => const AboutPage(),
       },
     );
-  }
-
-  @override
-  void dispose() {
-    _themeModeNotifier.dispose();
-    super.dispose();
   }
 }
 
@@ -91,7 +91,6 @@ typedef RequestFn<T> = Future<List<T>> Function(int nextIndex);
 typedef ItemBuilder<T> = Widget Function(
     BuildContext context, T item, int index);
 
-// 2. 添加显示条目数的ValueNotifier
 final ValueNotifier<int?> displayItemCountNotifier =
     ValueNotifier<int?>(null); // null表示全部显示
 
@@ -112,58 +111,33 @@ class InfiniteList<T> extends StatefulWidget {
 class _InfiniteListState<T> extends State<InfiniteList<T>> {
   List<T> items = [];
   bool end = false;
-  bool isLoading = false;
 
   Future<void> _getMoreItems() async {
-    if (isLoading || end) return;
-
-    setState(() {
-      isLoading = true;
-    });
-
     final moreItems = await widget.onRequest(items.length);
     if (!mounted) return;
 
     if (moreItems.isEmpty) {
-      setState(() {
-        end = true;
-        isLoading = false;
-      });
+      setState(() => end = true);
       return;
     }
-    setState(() {
-      items = [...items, ...moreItems];
-      isLoading = false;
-    });
+    setState(() => items = [...items, ...moreItems]);
   }
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      // 提前加载更多项目
-      onNotification: (ScrollNotification scrollInfo) {
-        if (!isLoading &&
-            !end &&
-            scrollInfo.metrics.pixels >=
-                scrollInfo.metrics.maxScrollExtent - 200) {
+    return ListView.builder(
+      itemBuilder: (context, index) {
+        if (index < items.length) {
+          return widget.itemBuilder(context, items[index], index);
+        } else if (index == items.length && end) {
+          return const Center(child: Text('以上です'));
+        } else {
           _getMoreItems();
+          return const Center(child: CircularProgressIndicator());
         }
-        return false;
       },
-      child: ListView.builder(
-        itemBuilder: (context, index) {
-          if (index < items.length) {
-            return widget.itemBuilder(context, items[index], index);
-          } else if (end) {
-            return const Center(child: Text('以上です'));
-          } else {
-            // 加载更多时显示加载指示器
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-        itemCount: items.length + (end ? 1 : 1),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      ),
+      itemCount: items.length + 1,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
     );
   }
 }
@@ -248,7 +222,7 @@ class _DictionaryTermState extends State<DictionaryTerm> {
 
   @override
   Widget build(BuildContext context) {
-    // 2. 考虑displayItemCountNotifier的值
+    // 考虑displayItemCountNotifier的值
     final displayCount = displayItemCountNotifier.value;
     final displayedImi = displayCount != null
         ? widget.imi.split('\n').take(displayCount).join('\n')
@@ -332,7 +306,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller = TextEditingController();
-  // 1. 使用ValueNotifier替换StreamController
   final ValueNotifier<String?> _searchNotifier = ValueNotifier<String?>(null);
   final List<String> _history = [''];
   final Map<int, String?> _hatsuonCache = {};
@@ -457,8 +430,10 @@ class _MyHomePageState extends State<MyHomePage> {
         } else {
           exp = RegExp(r"Play\(\d+,'[^']+','([^']+)");
           match = exp.firstMatch(play)?.group(1);
-          match = utf8.decode(base64.decode(match!));
-          url = 'https://audio00.forvo.com/ogg/$match';
+          if (match != null) {
+            match = utf8.decode(base64.decode(match));
+            url = 'https://audio00.forvo.com/ogg/$match';
+          }
         }
       } catch (_) {
         url = null;
@@ -518,9 +493,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 3. 使用PopScope代替WillPopScope
-    // 需要注意的是，Flutter官方文档中并没有PopScope控件，通常使用WillPopScope来处理返回事件。
-    // 如果您确实有自定义的PopScope，请确保其正确实现。
+    // 使用WillPopScope，因为PopScope不是标准控件
     return WillPopScope(
       onWillPop: () async {
         if (_history.isEmpty) return true;
@@ -605,8 +578,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         ),
-        // 2. 添加Drawer
-        drawer: _buildDrawer(),
+        // 添加Drawer
+        drawer: _buildDrawer(context),
         body: Container(
           margin: const EdgeInsets.all(8.0),
           child: ValueListenableBuilder<String?>(
@@ -627,14 +600,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 List<Map<String, dynamic>> result = [];
                 final searchQuery = searchData.toLowerCase();
 
-                if (searchQuery.contains(RegExp(r'^[a-z]+$'))) {
+                if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
                   searchField = 'romaji';
-                } else if (searchQuery.contains(RegExp(r'^[ぁ-ゖー]+$'))) {
+                } else if (RegExp(r'^[ぁ-ゖー]+$').hasMatch(searchQuery)) {
                   searchField = 'yomikata';
-                } else if (searchQuery
-                    .contains(RegExp(r'[\.\+\[\]\*\^\$\?]'))) {
+                } else if (RegExp(r'[\.\+\[\]\*\^\$\?]')
+                    .hasMatch(searchQuery)) {
                   method = 'REGEXP';
-                } else if (searchQuery.contains(RegExp(r'[_%]'))) {
+                } else if (RegExp(r'[_%]').hasMatch(searchQuery)) {
                   method = 'LIKE';
                 }
 
@@ -811,8 +784,8 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 2. 构建Drawer
-  Widget _buildDrawer() {
+  // 构建Drawer
+  Widget _buildDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -835,7 +808,7 @@ class _MyHomePageState extends State<MyHomePage> {
             title: const Text('テーマモード設定'),
             onTap: () {
               Navigator.pop(context); // 关闭Drawer
-              _showThemeDialog();
+              _showThemeDialog(context);
             },
           ),
           // 显示条目数
@@ -844,7 +817,7 @@ class _MyHomePageState extends State<MyHomePage> {
             title: const Text('表示条目数'),
             onTap: () {
               Navigator.pop(context); // 关闭Drawer
-              _showDisplayCountDialog();
+              _showDisplayCountDialog(context);
             },
           ),
           // 关于
@@ -862,11 +835,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // 显示主题设置对话框
-  Future<void> _showThemeDialog() async {
-    showDialog(
+  Future<void> _showThemeDialog(BuildContext context) async {
+    final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
+    ThemeMode selectedMode = themeNotifier.themeMode;
+
+    await showDialog(
       context: context,
       builder: (context) {
-        ThemeMode selectedMode = _getCurrentThemeMode();
         return AlertDialog(
           title: const Text('テーマモード設定'),
           content: Column(
@@ -878,13 +853,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 groupValue: selectedMode,
                 onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    setState(() {
-                      selectedMode = value;
-                      (context.findAncestorWidgetOfExactType<MyApp>() as MyApp)
-                          .createState()
-                          ._updateThemeMode(value);
-                    });
-                    _themeModeNotifier.value = value;
+                    themeNotifier.setThemeMode(value);
                     Navigator.pop(context);
                   }
                 },
@@ -895,10 +864,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 groupValue: selectedMode,
                 onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    setState(() {
-                      selectedMode = value;
-                      _themeModeNotifier.value = value;
-                    });
+                    themeNotifier.setThemeMode(value);
                     Navigator.pop(context);
                   }
                 },
@@ -909,10 +875,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 groupValue: selectedMode,
                 onChanged: (ThemeMode? value) {
                   if (value != null) {
-                    setState(() {
-                      selectedMode = value;
-                      _themeModeNotifier.value = value;
-                    });
+                    themeNotifier.setThemeMode(value);
                     Navigator.pop(context);
                   }
                 },
@@ -924,14 +887,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 获取当前主题模式
-  ThemeMode _getCurrentThemeMode() {
-    return _themeModeNotifier.value;
-  }
-
   // 显示显示条目数设置对话框
-  Future<void> _showDisplayCountDialog() async {
-    showDialog(
+  Future<void> _showDisplayCountDialog(BuildContext context) async {
+    await showDialog(
       context: context,
       builder: (context) {
         int? selectedCount = displayItemCountNotifier.value;
@@ -968,13 +926,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-// 2. 添加About页面
+// 添加 About 页面
 class AboutPage extends StatelessWidget {
   const AboutPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // 使用Scaffold提供返回按钮
+    // 使用 Scaffold 提供返回按钮
     return Scaffold(
       appBar: AppBar(
         title: const Text('关于'),
@@ -984,21 +942,22 @@ class AboutPage extends StatelessWidget {
         child: Column(
           children: <Widget>[
             const Text(
-              '作者: Your Name',
+              '作者: emc2314, OuOu2021',
               style: TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 10),
             const Text(
-              '协议: MIT License',
+              // TODO: 找原作者确定开源协议
+              'License: Unknown',
               style: TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () {
-                // 这里可以实现打开GitHub主页的功能
+                // 这里可以实现打开GitHub主页的功能，例如使用 url_launcher 包
               },
               child: const Text(
-                'GitHub主页: https://github.com/yourusername',
+                'GitHub主页: https://github.com/OuOu2021/arujisho',
                 style: TextStyle(
                     fontSize: 18,
                     color: Colors.blue,
