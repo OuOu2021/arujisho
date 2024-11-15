@@ -34,6 +34,7 @@ void main() {
         create: (_) => ThemeNotifier(),
       ),
       ChangeNotifierProvider(create: (_) => DisplayItemCountNotifier()),
+      ChangeNotifierProvider(create: (_) => ExpandedItemCountNotifier()),
     ],
     child: const MyApp(),
   ));
@@ -122,6 +123,39 @@ class DisplayItemCountNotifier extends ChangeNotifier {
     } else {
       _displayItemCount = null;
     }
+  }
+}
+
+class ExpandedItemCountNotifier extends ChangeNotifier {
+  int _expandedItemCount = 3;
+  static const String _expandedItemCountKey = 'expandedItemCount';
+
+  int get expandedItemCount => _expandedItemCount;
+
+  ExpandedItemCountNotifier() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _loadExpandedItemCount();
+    notifyListeners(); // Notify listeners after loading the theme mode
+  }
+
+  Future<void> setExpandedItemCount(int i) async {
+    _expandedItemCount = i;
+    await _saveExpandedItemCount();
+    notifyListeners();
+  }
+
+  Future<void> _saveExpandedItemCount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt(_expandedItemCountKey, _expandedItemCount!);
+  }
+
+  Future<void> _loadExpandedItemCount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int expandedItemCount = prefs.getInt(_expandedItemCountKey)!;
+    _expandedItemCount = expandedItemCount;
   }
 }
 
@@ -815,6 +849,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   final word =
                       item['origForm'] == '' ? item['word'] : item['origForm'];
 
+                  final expandedItemCountProvider =
+                      Provider.of<ExpandedItemCountNotifier>(context,
+                          listen: false);
+                  final expandedItemCount =
+                      expandedItemCountProvider.expandedItemCount;
                   return ListTileTheme(
                     dense: true,
                     child: ExpansionTile(
@@ -860,7 +899,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 dictName: cont,
                                 imi: simi,
                                 queryWord: _setSearchContent,
-                                initialExpanded: index1 < 3,
+                                initialExpanded: index1 < expandedItemCount,
                               )
                             ];
                           }),
@@ -912,10 +951,19 @@ class _MyHomePageState extends State<MyHomePage> {
           // 显示条目数
           ListTile(
             leading: const Icon(Icons.list),
-            title: const Text('表示条目数'),
+            title: const Text('表示件数'),
             onTap: () {
               Navigator.pop(context); // 关闭Drawer
               _showDisplayCountDialog(context);
+            },
+          ),
+          // 详细显示条目数
+          ListTile(
+            leading: const Icon(Icons.list_alt),
+            title: const Text('展開表示件数'),
+            onTap: () {
+              Navigator.pop(context); // 关闭Drawer
+              _showExpandedCountDialog(context);
             },
           ),
           // 关于
@@ -1020,6 +1068,51 @@ class _MyHomePageState extends State<MyHomePage> {
                         listen: false);
                 if (value != null) {
                   displayItemCountNotifier.setDisplayItemCount(value);
+                }
+              });
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // 显示展开条目数设置对话框
+  Future<void> _showExpandedCountDialog(BuildContext context) async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final expendedItemCountNotifier =
+            Provider.of<ExpandedItemCountNotifier>(context, listen: false);
+        int? selectedCount = expendedItemCountNotifier.expandedItemCount;
+        return AlertDialog(
+          title: const Text('展開表示条目数'),
+          content: DropdownButtonFormField<int?>(
+            value: selectedCount,
+            decoration: const InputDecoration(
+              labelText: '展開表示する条目数',
+            ),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: 999,
+                child: Text('すべて展開表示'),
+              ),
+              ...List.generate(6, (index) {
+                int value = index + 1;
+                return DropdownMenuItem<int?>(
+                  value: value,
+                  child: Text('$value'),
+                );
+              }),
+            ],
+            onChanged: (int? value) {
+              setState(() {
+                final expendedItemCountNotifier =
+                    Provider.of<DisplayItemCountNotifier>(context,
+                        listen: false);
+                if (value != null) {
+                  expendedItemCountNotifier.setDisplayItemCount(value);
                 }
               });
               Navigator.pop(context);
