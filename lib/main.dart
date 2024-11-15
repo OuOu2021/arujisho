@@ -18,7 +18,7 @@ import 'package:crypto/crypto.dart' show sha256;
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:icofont_flutter/icofont_flutter.dart';
 import 'package:expandable/expandable.dart';
-import 'package:provider/provider.dart'; // 引入 Provider
+import 'package:provider/provider.dart';
 
 import 'package:arujisho/splash_screen.dart';
 import 'package:arujisho/ffi.io.dart';
@@ -1016,7 +1016,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // 关于
           ListTile(
             leading: const Icon(Icons.info),
-            title: const Text('关于'),
+            title: const Text('アプリについて'),
             onTap: () {
               Navigator.pop(context); // 关闭Drawer
               Navigator.pushNamed(context, '/about');
@@ -1090,7 +1090,7 @@ class AboutPage extends StatelessWidget {
     // 使用 Scaffold 提供返回按钮
     return Scaffold(
       appBar: AppBar(
-        title: const Text('关于'),
+        title: const Text('アプリについて'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -1100,6 +1100,12 @@ class AboutPage extends StatelessWidget {
               '作者: emc2314, OuOu2021',
               style: TextStyle(fontSize: 18),
             ),
+            // const SizedBox(height: 10),
+            // const Text(
+            //   // TODO: 找原作者确定开源协议
+            //   'Version: ${await getAppVersion()}',
+            //   style: TextStyle(fontSize: 18),
+            // ),
             const SizedBox(height: 10),
             const Text(
               // TODO: 找原作者确定开源协议
@@ -1114,7 +1120,7 @@ class AboutPage extends StatelessWidget {
               child: const Text(
                 'GitHub主页: https://github.com/OuOu2021/arujisho',
                 style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     color: Colors.blue,
                     decoration: TextDecoration.underline),
               ),
