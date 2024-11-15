@@ -179,16 +179,20 @@ class MyApp extends StatelessWidget {
         inputDecorationTheme: const InputDecorationTheme(
           fillColor: Colors.white,
         ),
+        drawerTheme: const DrawerThemeData(
+          surfaceTintColor: Colors.blue,
+        ),
         fontFamily: "NotoSansJP",
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
         primarySwatch: Colors.blue,
         brightness: Brightness.dark,
-        primaryColorDark: Colors.blue,
+        primaryColorDark: Colors.blueAccent,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
         ),
+        drawerTheme: const DrawerThemeData(surfaceTintColor: Colors.blueAccent),
         scaffoldBackgroundColor: Colors.white12,
         fontFamily: "NotoSansJP",
       ),
@@ -924,14 +928,15 @@ class _MyHomePageState extends State<MyHomePage> {
   // 构建Drawer
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
+      width: MediaQuery.of(context).size.width * 0.64,
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          const DrawerHeader(
+          DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: Theme.of(context).drawerTheme.surfaceTintColor,
             ),
-            child: Text(
+            child: const Text(
               '設定',
               style: TextStyle(
                 color: Colors.white,
