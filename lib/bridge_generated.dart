@@ -37,6 +37,8 @@ class SudachiFfiImpl implements SudachiFfi {
         constMeta: kParseConstMeta,
         argValues: [data, configPath],
         hint: hint,
+        // TODO
+        parseErrorData: (errorData) => {},
       ));
 
   FlutterRustBridgeTaskConstMeta get kParseConstMeta =>
@@ -158,14 +160,14 @@ class SudachiFfiWire implements FlutterRustBridgeWireBase {
   }
 
   late final _new_uint_8_list_0Ptr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<wire_uint_8_list> Function(
-              ffi.Int32)>>('new_uint_8_list_0');
+          ffi
+          .NativeFunction<ffi.Pointer<wire_uint_8_list> Function(ffi.Int32)>>(
+      'new_uint_8_list_0');
   late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
       .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
 
   void free_WireSyncReturnStruct(
-    WireSyncReturnStruct val,
+    WireSyncReturn val,
   ) {
     return _free_WireSyncReturnStruct(
       val,
@@ -173,10 +175,32 @@ class SudachiFfiWire implements FlutterRustBridgeWireBase {
   }
 
   late final _free_WireSyncReturnStructPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(WireSyncReturnStruct)>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(WireSyncReturn)>>(
           'free_WireSyncReturnStruct');
-  late final _free_WireSyncReturnStruct = _free_WireSyncReturnStructPtr
-      .asFunction<void Function(WireSyncReturnStruct)>();
+  late final _free_WireSyncReturnStruct =
+      _free_WireSyncReturnStructPtr.asFunction<void Function(WireSyncReturn)>();
+
+  @override
+  void drop_dart_object(int ptr) {
+    // TODO: implement drop_dart_object
+  }
+
+  @override
+  void free_WireSyncReturn(WireSyncReturn val) {
+    // TODO: implement free_WireSyncReturn
+  }
+
+  @override
+  Object get_dart_object(int ptr) {
+    // TODO: implement get_dart_object
+    throw UnimplementedError();
+  }
+
+  @override
+  int new_dart_opaque(Object obj) {
+    // TODO: implement new_dart_opaque
+    throw UnimplementedError();
+  }
 }
 
 class wire_uint_8_list extends ffi.Struct {
