@@ -87,11 +87,13 @@ class ThemeNotifier extends ChangeNotifier {
   }
 }
 
+const int MYINF = 999;
+
 class DisplayItemCountNotifier extends ChangeNotifier {
-  int? _displayItemCount;
+  int _displayItemCount = MYINF;
   static const String _displayItemCountKey = 'displayItemCount';
 
-  int? get displayItemCount => _displayItemCount;
+  int get displayItemCount => _displayItemCount;
 
   DisplayItemCountNotifier() {
     _init();
@@ -102,7 +104,7 @@ class DisplayItemCountNotifier extends ChangeNotifier {
     notifyListeners(); // Notify listeners after loading the theme mode
   }
 
-  Future<void> setDisplayItemCount(int? i) async {
+  Future<void> setDisplayItemCount(int i) async {
     _displayItemCount = i;
     await _saveDisplayItemCount();
     notifyListeners();
@@ -110,19 +112,13 @@ class DisplayItemCountNotifier extends ChangeNotifier {
 
   Future<void> _saveDisplayItemCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (_displayItemCount != null) {
-      prefs.setInt(_displayItemCountKey, _displayItemCount!);
-    }
+    prefs.setInt(_displayItemCountKey, _displayItemCount);
   }
 
   Future<void> _loadDisplayItemCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? displayItemCount = prefs.getInt(_displayItemCountKey);
-    if (displayItemCount != null) {
-      _displayItemCount = displayItemCount;
-    } else {
-      _displayItemCount = null;
-    }
+    int displayItemCount = prefs.getInt(_displayItemCountKey)!;
+    _displayItemCount = displayItemCount;
   }
 }
 
@@ -836,13 +832,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   // 考虑displayItemCountNotifier的值
                   final displayCount =
                       displayItemCountNotifier.displayItemCount;
-                  final imi = displayCount != null
-                      ? Map.fromIterable(
-                          imiTmp.entries.take(displayCount),
-                          key: (entry) => entry.key,
-                          value: (entry) => entry.value,
-                        )
-                      : imiTmp;
+                  final imi = Map.fromIterable(
+                    imiTmp.entries.take(displayCount),
+                    key: (entry) => entry.key,
+                    value: (entry) => entry.value,
+                  );
 
                   final pitchData = item['pitchData'] != ''
                       ? jsonDecode(item['pitchData'])
@@ -982,26 +976,28 @@ class _MyHomePageState extends State<MyHomePage> {
             // title: const Text('表示件数'),
             subtitle: Consumer<DisplayItemCountNotifier>(
               builder: (context, displayProvider, child) {
-                return DropdownButtonFormField<int?>(
+                return DropdownButtonFormField<int>(
                   value: displayProvider.displayItemCount,
                   decoration: const InputDecoration(
                     labelText: '表示件数',
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
+                    const DropdownMenuItem<int>(
+                      value: MYINF,
                       child: Text('すべて表示'),
                     ),
                     ...List.generate(6, (index) {
                       int value = index + 1;
-                      return DropdownMenuItem<int?>(
+                      return DropdownMenuItem<int>(
                         value: value,
                         child: Text('$value'),
                       );
                     }),
                   ],
                   onChanged: (int? value) {
-                    displayProvider.setDisplayItemCount(value);
+                    if (value != null) {
+                      displayProvider.setDisplayItemCount(value);
+                    }
                   },
                 );
               },
@@ -1021,7 +1017,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   items: [
                     const DropdownMenuItem<int?>(
-                      value: 999,
+                      value: MYINF,
                       child: Text('すべて展開表示'),
                     ),
                     ...List.generate(6, (index) {
