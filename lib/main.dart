@@ -949,10 +949,32 @@ class _MyHomePageState extends State<MyHomePage> {
           ListTile(
             leading: const Icon(Icons.brightness_6),
             title: const Text('テーマモード設定'),
-            onTap: () {
-              Navigator.pop(context); // 关闭Drawer
-              _showThemeDialog(context);
-            },
+            subtitle: Consumer<ThemeNotifier>(
+              builder: (context, themeProvider, child) {
+                return DropdownButtonFormField<ThemeMode>(
+                  value: themeProvider._themeMode,
+                  items: const [
+                    DropdownMenuItem<ThemeMode>(
+                      value: ThemeMode.system,
+                      child: Text('システムに従う'),
+                    ),
+                    DropdownMenuItem<ThemeMode>(
+                      value: ThemeMode.light,
+                      child: Text('明るいモード'),
+                    ),
+                    DropdownMenuItem<ThemeMode>(
+                      value: ThemeMode.dark,
+                      child: Text('暗いモード'),
+                    ),
+                  ],
+                  onChanged: (ThemeMode? value) {
+                    if (value != null) {
+                      themeProvider.setThemeMode(value);
+                    }
+                  },
+                );
+              },
+            ),
           ),
           // 显示条目数
           ListTile(
@@ -988,7 +1010,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
           // 详细显示条目数
           ListTile(
-            leading: const Icon(Icons.list),
+            leading: const Icon(Icons.list_alt),
             // title: const Text('展開件数'),
             subtitle: Consumer<ExpandedItemCountNotifier>(
               builder: (context, expendedProvider, child) {
@@ -1030,59 +1052,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-    );
-  }
-
-  // 显示主题设置对话框
-  Future<void> _showThemeDialog(BuildContext context) async {
-    final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
-    ThemeMode selectedMode = themeNotifier.themeMode;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('テーマモード設定'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              RadioListTile<ThemeMode>(
-                title: const Text('システムに従う'),
-                value: ThemeMode.system,
-                groupValue: selectedMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeNotifier.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('明るいモード'),
-                value: ThemeMode.light,
-                groupValue: selectedMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeNotifier.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('暗いモード'),
-                value: ThemeMode.dark,
-                groupValue: selectedMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeNotifier.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
