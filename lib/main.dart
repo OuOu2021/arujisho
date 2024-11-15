@@ -505,9 +505,18 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _cpListener() async {
-    final cp = (await Clipboard.getData('text/plain'))?.text ?? '';
-    if (cp == _controller.text) return;
-    _setSearchContent(cp);
+    final clipboardData = await Clipboard.getData('text/plain');
+    if (clipboardData == null) return; // 如果剪贴板中没有数据，直接返回
+
+    final text = clipboardData.text;
+    if (text == null || text.isEmpty) return; // 如果粘贴的内容不是文本或为空，直接返回
+
+    const int maxTextLength = 100; // 设置一个最大文本长度阈值
+    if (text.length > maxTextLength) return; // 如果粘贴的文本长度超过阈值，直接返回
+
+    if (text == _controller.text) return; // 如果粘贴的内容与当前输入框内容相同，直接返回
+
+    _setSearchContent(text); // 处理粘贴的文本内容
   }
 
   @override
