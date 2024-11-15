@@ -28,12 +28,15 @@ import 'package:arujisho/ruby_text/ruby_text_data.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
-      child: const MyApp(),
-    ),
-  );
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(
+        create: (_) => ThemeNotifier(),
+      ),
+      ChangeNotifierProvider(create: (_) => DisplayItemCountNotifier()),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class ThemeNotifier extends ChangeNotifier {
@@ -79,6 +82,45 @@ class ThemeNotifier extends ChangeNotifier {
       }
     } else {
       _themeMode = ThemeMode.system;
+    }
+  }
+}
+
+class DisplayItemCountNotifier extends ChangeNotifier {
+  int? _displayItemCount;
+  static const String _displayItemCountKey = 'displayItemCount';
+
+  int? get displayItemCount => _displayItemCount;
+
+  DisplayItemCountNotifier() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _loadDisplayItemCount();
+    notifyListeners(); // Notify listeners after loading the theme mode
+  }
+
+  Future<void> setDisplayItemCount(int i) async {
+    _displayItemCount = i;
+    await _saveDisplayItemCount();
+    notifyListeners();
+  }
+
+  Future<void> _saveDisplayItemCount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (_displayItemCount != null) {
+      prefs.setInt(_displayItemCountKey, _displayItemCount!);
+    }
+  }
+
+  Future<void> _loadDisplayItemCount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? displayItemCount = prefs.getInt(_displayItemCountKey);
+    if (displayItemCount != null) {
+      _displayItemCount = displayItemCount;
+    } else {
+      _displayItemCount = null;
     }
   }
 }
@@ -130,9 +172,6 @@ class MyApp extends StatelessWidget {
 typedef RequestFn<T> = Future<List<T>> Function(int nextIndex);
 typedef ItemBuilder<T> = Widget Function(
     BuildContext context, T item, int index);
-
-final ValueNotifier<int?> displayItemCountNotifier =
-    ValueNotifier<int?>(null); // null表示全部显示
 
 class InfiniteList<T> extends StatefulWidget {
   final RequestFn<T> onRequest;
@@ -262,12 +301,6 @@ class _DictionaryTermState extends State<DictionaryTerm> {
 
   @override
   Widget build(BuildContext context) {
-    // 考虑displayItemCountNotifier的值
-    final displayCount = displayItemCountNotifier.value;
-    final displayedImi = displayCount != null
-        ? widget.imi.split('\n').take(displayCount).join('\n')
-        : widget.imi;
-
     return Padding(
       padding: const EdgeInsets.only(top: 0, bottom: 10),
       child: ExpandablePanel(
@@ -327,7 +360,7 @@ class _DictionaryTermState extends State<DictionaryTerm> {
                           ))
                       .toList(),
                 )
-              : SelectableText(displayedImi,
+              : SelectableText(widget.imi,
                   style: const TextStyle(fontSize: 12),
                   toolbarOptions:
                       const ToolbarOptions(copy: true, selectAll: false)),
@@ -349,6 +382,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final ValueNotifier<String?> _searchNotifier = ValueNotifier<String?>(null);
   final List<String> _history = [''];
   final Map<int, String?> _hatsuonCache = {};
+
   static const _kanaKit = KanaKit();
   int _searchMode = 0;
   Timer? _debounce;
@@ -755,7 +789,22 @@ class _MyHomePageState extends State<MyHomePage> {
               return InfiniteList<Map<String, dynamic>>(
                 onRequest: queryAuto,
                 itemBuilder: (context, item, index) {
-                  final imi = jsonDecode(item['imi']) as Map<String, dynamic>;
+                  final imiTmp =
+                      jsonDecode(item['imi']) as Map<String, dynamic>;
+                  final displayItemCountNotifier =
+                      Provider.of<DisplayItemCountNotifier>(context,
+                          listen: false);
+                  // 考虑displayItemCountNotifier的值
+                  final displayCount =
+                      displayItemCountNotifier.displayItemCount;
+                  final imi = displayCount != null
+                      ? Map.fromIterable(
+                          imiTmp.entries.take(displayCount),
+                          key: (entry) => entry.key,
+                          value: (entry) => entry.value,
+                        )
+                      : imiTmp;
+
                   final pitchData = item['pitchData'] != ''
                       ? jsonDecode(item['pitchData'])
                           .map(
@@ -941,7 +990,9 @@ class _MyHomePageState extends State<MyHomePage> {
     await showDialog(
       context: context,
       builder: (context) {
-        int? selectedCount = displayItemCountNotifier.value;
+        final displayItemCountNotifier =
+            Provider.of<DisplayItemCountNotifier>(context, listen: false);
+        int? selectedCount = displayItemCountNotifier.displayItemCount;
         return AlertDialog(
           title: const Text('表示条目数'),
           content: DropdownButtonFormField<int?>(
@@ -964,7 +1015,12 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
             onChanged: (int? value) {
               setState(() {
-                displayItemCountNotifier.value = value;
+                final displayItemCountNotifier =
+                    Provider.of<DisplayItemCountNotifier>(context,
+                        listen: false);
+                if (value != null) {
+                  displayItemCountNotifier.setDisplayItemCount(value);
+                }
               });
               Navigator.pop(context);
             },
