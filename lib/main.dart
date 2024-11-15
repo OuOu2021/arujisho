@@ -188,12 +188,13 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData(
         primarySwatch: Colors.blue,
         brightness: Brightness.dark,
-        primaryColorDark: Colors.blueAccent,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
+        primaryColorLight: Colors.grey[700],
+        primaryColorDark: Colors.grey[900],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.blue[800],
         ),
-        drawerTheme: const DrawerThemeData(surfaceTintColor: Colors.blueAccent),
-        scaffoldBackgroundColor: Colors.white12,
+        drawerTheme: DrawerThemeData(surfaceTintColor: Colors.blue[800]),
+        // scaffoldBackgroundColor: Colors.grey[900],
         fontFamily: "NotoSansJP",
       ),
       themeMode: themeNotifier.themeMode,
