@@ -629,7 +629,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final text = clipboardData.text;
     if (text == null || text.isEmpty) return; // 如果粘贴的内容不是文本或为空，直接返回
 
-    const int maxTextLength = 100; // 设置一个最大文本长度阈值
+    const int maxTextLength = 20; // 设置一个最大文本长度阈值
     if (text.length > maxTextLength) return; // 如果粘贴的文本长度超过阈值，直接返回
 
     if (text == _controller.text) return; // 如果粘贴的内容与当前输入框内容相同，直接返回
@@ -641,10 +641,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _controller.addListener(() {
-      if (_debounce?.isActive ?? false) return;
-      _debounce = Timer(const Duration(milliseconds: 300), () => _search(0));
+      // if (_debounce?.isActive ?? false) return;
+      // _debounce = Timer(const Duration(milliseconds: 300), () => _search(0));
       // 仅当文本更改时调用setState以更新界面
-      setState(() {});
+      Future.microtask(() => {setState(() {})});
     });
     ClipboardListener.addListener(_cpListener);
   }
