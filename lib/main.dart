@@ -219,6 +219,41 @@ class InfiniteList<T> extends StatefulWidget {
 class _InfiniteListState<T> extends State<InfiniteList<T>> {
   List<T> items = [];
   bool end = false;
+  bool showScrollToTopButton = false; // 控制返回顶部按钮的显示
+  late ScrollController _scrollController; // 用于监听滚动
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener); // 添加滚动监听器
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _scrollController.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset > 150) {
+      if (!showScrollToTopButton) {
+        Future.microtask(() => {setState(() => showScrollToTopButton = true)});
+      }
+    } else {
+      if (showScrollToTopButton) {
+        Future.microtask(() => {setState(() => showScrollToTopButton = false)});
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
 
   Future<void> _getMoreItems() async {
     final moreItems = await widget.onRequest(items.length);
@@ -233,20 +268,39 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemBuilder: (context, index) {
-        if (index < items.length) {
-          return widget.itemBuilder(context, items[index], index);
-        } else if (index == items.length && end) {
-          return const Center(child: Text('以上です'));
-        } else {
-          _getMoreItems();
-          return const Center(child: CircularProgressIndicator());
-        }
-      },
-      itemCount: items.length + 1,
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-    );
+    return Stack(children: [
+      ListView.builder(
+        controller: _scrollController, // 绑定滚动控制器
+        itemBuilder: (context, index) {
+          if (index < items.length) {
+            return widget.itemBuilder(context, items[index], index);
+          } else if (index == items.length && end) {
+            return const Center(child: Text('以上です'));
+          } else {
+            _getMoreItems();
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+        itemCount: items.length + 1,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      ),
+      Positioned(
+          bottom: 90,
+          right: 16,
+          child: AnimatedOpacity(
+              opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
+              duration: const Duration(milliseconds: 300), // 动画时长
+              curve: Curves.easeInOut,
+              child: Visibility(
+                // visible: showScrollToTopButton,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    if (showScrollToTopButton) _scrollToTop();
+                  },
+                  child: const Icon(Icons.arrow_upward),
+                ),
+              ))),
+    ]);
   }
 }
 
@@ -836,7 +890,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       item['origForm'] == '' ? item['word'] : item['origForm'];
 
                   return ListTileTheme(
-                    dense: true,
+                    // dense: true,
                     child: ExpansionTile(
                       initiallyExpanded:
                           item.containsKey('expanded') && item['expanded'],
