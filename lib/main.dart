@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,10 @@ void main() {
       ),
       ChangeNotifierProvider(create: (_) => DisplayItemCountNotifier()),
       ChangeNotifierProvider(create: (_) => ExpandedItemCountNotifier()),
+      Provider<Logger>(
+          create: (_) => Logger(printer: PrettyPrinter(), level: Level.debug
+              // filter: DevelopmentFilter(),
+              )),
     ],
     child: const MyApp(),
   ));
@@ -178,6 +183,9 @@ class MyApp extends StatelessWidget {
         fontFamily: font,
         brightness: Brightness.light,
         colorSchemeSeed: indigo,
+        // appBarTheme: AppBarTheme(
+        //     scrolledUnderElevation: 6.0, surfaceTintColor: Colors.transparent),
+        // shadowColor: Colors.transparent,
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
@@ -453,6 +461,28 @@ class _DictionaryTermState extends State<DictionaryTerm> {
   }
 }
 
+class SearchHistoryNotifier extends ChangeNotifier {
+  final List<String> _history = [];
+
+  List<String> get history => List.unmodifiable(_history);
+  bool get isEmpty => _history.isEmpty;
+  bool get isNotEmpty => _history.isNotEmpty;
+  String get last => _history.last;
+  int get length => _history.length;
+
+  void add(String item) {
+    _history.add(item);
+    notifyListeners();
+  }
+
+  void removeLast() {
+    if (_history.isNotEmpty) {
+      _history.removeLast();
+      notifyListeners();
+    }
+  }
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
@@ -461,14 +491,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final TextEditingController _controller = TextEditingController();
-  final ValueNotifier<String?> _searchNotifier = ValueNotifier<String?>(null);
-  final List<String> _history = [''];
+  late TextEditingController _controller;
+  late SearchHistoryNotifier _searchNotifier;
   final Map<int, String?> _hatsuonCache = {};
 
   static const _kanaKit = KanaKit();
   int _searchMode = 0;
-  Timer? _debounce;
+  Timer? _historyTimer;
   static Database? _db;
 
   Future<Database> get database async {
@@ -481,26 +510,27 @@ class _MyHomePageState extends State<MyHomePage> {
     return _db!;
   }
 
+  /// 搜索新值前，处理搜索历史
   Future<void> _search(int mode) async {
     if (_controller.text.isEmpty) {
-      _searchNotifier.value = null;
-      setState(() {});
+      // if (_searchNotifier.isEmpty || _searchNotifier.last.isNotEmpty) {
+      //   _searchNotifier.add("");
+      // }
       return;
     }
-    if (_history.isEmpty || _history.last != _controller.text) {
-      _history.add(_controller.text);
+    if (_searchNotifier.isEmpty || _searchNotifier.last != _controller.text) {
+      if (_historyTimer != null && _historyTimer!.isActive) {
+        _historyTimer!.cancel();
+        _searchNotifier.removeLast();
+      }
+      // 查看5秒以上的单词才加入历史
+      _historyTimer = Timer(const Duration(seconds: 3), () {});
+      // if (_searchNotifier.isNotEmpty && _searchNotifier.last.isEmpty) {
+      //   _searchNotifier.removeLast();
+      // }
+      _searchNotifier.add(_controller.text);
     }
     _searchMode = mode;
-    var s = _controller.text;
-    s = s
-        .replaceAll("\\pc", "\\p{Han}")
-        .replaceAll("\\ph", "\\p{Hiragana}")
-        .replaceAll("\\pk", "\\p{Katakana}");
-    s = s
-        .split('')
-        .map<String>((c) => cjdc.containsKey(c) ? cjdc[c]! : c)
-        .join();
-    _searchNotifier.value = s;
   }
 
   Future<void> _hatsuon(Map<String, dynamic> item) async {
@@ -629,7 +659,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final text = clipboardData.text;
     if (text == null || text.isEmpty) return; // 如果粘贴的内容不是文本或为空，直接返回
 
-    const int maxTextLength = 20; // 设置一个最大文本长度阈值
+    const int maxTextLength = 15; // 设置一个最大文本长度阈值
     if (text.length > maxTextLength) return; // 如果粘贴的文本长度超过阈值，直接返回
 
     if (text == _controller.text) return; // 如果粘贴的内容与当前输入框内容相同，直接返回
@@ -640,18 +670,18 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _controller = TextEditingController();
+    _searchNotifier = SearchHistoryNotifier();
     _controller.addListener(() {
-      // if (_debounce?.isActive ?? false) return;
-      // _debounce = Timer(const Duration(milliseconds: 300), () => _search(0));
-      // 仅当文本更改时调用setState以更新界面
-      Future.microtask(() => {setState(() {})});
+      _search(0);
     });
     ClipboardListener.addListener(_cpListener);
   }
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    _historyTimer?.cancel();
+    _historyTimer = null;
     _controller.dispose();
     ClipboardListener.removeListener(_cpListener);
     _searchNotifier.dispose();
@@ -660,15 +690,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 使用WillPopScope，因为PopScope不是标准控件
     return WillPopScope(
       onWillPop: () async {
-        if (_history.isEmpty) return true;
-        while (_history.last == _controller.text && _history.length > 1) {
-          _history.removeLast();
+        if (_historyTimer != null && _historyTimer!.isActive) {
+          _historyTimer!.cancel();
+          _historyTimer = null;
+          _searchNotifier.removeLast();
+          if (_searchNotifier.isEmpty) {
+            _setSearchContent("");
+          }
         }
-        final temp = _history.last;
-        _history.removeLast();
+        if (_searchNotifier.isEmpty) return true;
+        while (_searchNotifier.last == _controller.text &&
+            _searchNotifier.length > 1) {
+          _searchNotifier.removeLast();
+        }
+        final temp = _searchNotifier.last;
+        _searchNotifier.removeLast();
         _setSearchContent(temp);
         return false;
       },
@@ -735,222 +773,216 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         // 添加Drawer
         drawer: _buildDrawer(context),
-        body: Container(
-          margin: const EdgeInsets.all(8.0),
-          child: ValueListenableBuilder<String?>(
-            valueListenable: _searchNotifier,
-            builder: (BuildContext ctx, String? searchData, _) {
-              if (searchData == null) {
-                return const Center(child: Text("ご参考になりましたら幸いです"));
+        body: ListenableBuilder(
+          listenable: _searchNotifier,
+          builder: (BuildContext ctx, _) {
+            if (_searchNotifier.isEmpty || _searchNotifier.last == "") {
+              return const Center(child: Text("ご参考になりましたら幸いです"));
+            }
+            final logger = Logger();
+            logger.d("${_searchNotifier._history}");
+            final last = _searchNotifier.last;
+            final searchData = last
+                .replaceAll("\\pc", "\\p{Han}")
+                .replaceAll("\\ph", "\\p{Hiragana}")
+                .replaceAll("\\pk", "\\p{Katakana}")
+                .split('')
+                .map<String>((c) => cjdc.containsKey(c) ? cjdc[c]! : c)
+                .join();
+            Future<List<Map<String, dynamic>>> queryAuto(int nextIndex) async {
+              const pageSize = 18;
+              if (nextIndex % pageSize != 0) return [];
+
+              final db = await database;
+              String searchField = 'word';
+              String method = "MATCH";
+              List<Map<String, dynamic>> result = [];
+              final searchQuery = searchData.toLowerCase();
+
+              if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
+                searchField = 'romaji';
+              } else if (RegExp(r'^[ぁ-ゖー]+$').hasMatch(searchQuery)) {
+                searchField = 'yomikata';
+              } else if (RegExp(r'[\.\+\[\]\*\^\$\?]').hasMatch(searchQuery)) {
+                method = 'REGEXP';
+              } else if (RegExp(r'[_%]').hasMatch(searchQuery)) {
+                method = 'LIKE';
               }
 
-              Future<List<Map<String, dynamic>>> queryAuto(
-                  int nextIndex) async {
-                const pageSize = 18;
-                if (nextIndex % pageSize != 0) return [];
-
-                final db = await database;
-                String searchField = 'word';
-                String method = "MATCH";
-                List<Map<String, dynamic>> result = [];
-                final searchQuery = searchData.toLowerCase();
-
-                if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
-                  searchField = 'romaji';
-                } else if (RegExp(r'^[ぁ-ゖー]+$').hasMatch(searchQuery)) {
-                  searchField = 'yomikata';
-                } else if (RegExp(r'[\.\+\[\]\*\^\$\?]')
-                    .hasMatch(searchQuery)) {
-                  method = 'REGEXP';
-                } else if (RegExp(r'[_%]').hasMatch(searchQuery)) {
-                  method = 'LIKE';
+              try {
+                if (method == "MATCH") {
+                  result = List.of(await db.rawQuery(
+                    'SELECT tt.word,tt.yomikata,tt.pitchData,'
+                    'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
+                    'FROM (imis JOIN (SELECT * FROM jpdc '
+                    'WHERE ($searchField MATCH "${searchQuery}*" OR r$searchField '
+                    'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
+                    '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
+                    'ORDER BY _rowid_ LIMIT $nextIndex,${2 * pageSize}'
+                    ') AS tt ON tt.idex=imis._rowid_)',
+                  ));
+                } else {
+                  result = List.of(await db.rawQuery(
+                    'SELECT tt.word,tt.yomikata,tt.pitchData,'
+                    'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
+                    'FROM (imis JOIN (SELECT * FROM jpdc '
+                    'WHERE (word $method "${searchQuery}" '
+                    'OR yomikata $method "${searchQuery}" '
+                    'OR romaji $method "${searchQuery}") '
+                    '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
+                    'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
+                    ') AS tt ON tt.idex=imis._rowid_)',
+                  ));
                 }
 
-                try {
-                  if (method == "MATCH") {
-                    result = List.of(await db.rawQuery(
-                      'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                      'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                      'FROM (imis JOIN (SELECT * FROM jpdc '
-                      'WHERE ($searchField MATCH "${searchQuery}*" OR r$searchField '
-                      'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
-                      '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
-                      'ORDER BY _rowid_ LIMIT $nextIndex,${2 * pageSize}'
-                      ') AS tt ON tt.idex=imis._rowid_)',
-                    ));
-                  } else {
-                    result = List.of(await db.rawQuery(
-                      'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                      'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                      'FROM (imis JOIN (SELECT * FROM jpdc '
-                      'WHERE (word $method "${searchQuery}" '
-                      'OR yomikata $method "${searchQuery}" '
-                      'OR romaji $method "${searchQuery}") '
-                      '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
-                      'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
-                      ') AS tt ON tt.idex=imis._rowid_)',
-                    ));
-                  }
+                result = result.map((qRow) {
+                  final map = <String, dynamic>{};
+                  qRow.forEach((key, value) => map[key] = value);
+                  return map;
+                }).toList();
 
-                  result = result.map((qRow) {
-                    final map = <String, dynamic>{};
-                    qRow.forEach((key, value) => map[key] = value);
-                    return map;
-                  }).toList();
-
-                  int balancedWeight(Map<String, dynamic> item, int bLen) {
-                    return (item['freqRank'] *
-                            (item[searchField].startsWith(searchQuery) &&
-                                    _searchMode == 0
-                                ? 100
-                                : 500) *
-                            pow(1.5 + item['yomikata'].length / bLen,
-                                _searchMode == 0 ? 2.5 : 0))
-                        .round();
-                  }
-
-                  int bLen = 1 << 31;
-                  for (var w in result) {
-                    if (w['yomikata'].length < bLen) {
-                      bLen = w['yomikata'].length;
-                    }
-                  }
-                  result.sort((a, b) => balancedWeight(a, bLen)
-                      .compareTo(balancedWeight(b, bLen)));
-                  return result;
-                } catch (e) {
-                  return nextIndex == 0
-                      ? [
-                          {
-                            'word': 'EXCEPTION',
-                            'yomikata': '以下の説明をご覧ください',
-                            'pitchData': '',
-                            'freqRank': -1,
-                            'idex': -1,
-                            'romaji': '',
-                            'orig': 'EXCEPTION',
-                            'origForm': '',
-                            'imi': jsonEncode({
-                              'ヘルプ': [
-                                "LIKE 検索:\n"
-                                    "    _  任意の1文字\n"
-                                    "    %  任意の0文字以上の文字列\n"
-                                    "\n"
-                                    "REGEX 検索:\n"
-                                    "    .  任意の1文字\n"
-                                    "    .*  任意の0文字以上の文字列\n"
-                                    "    .+  任意の1文字以上の文字列\n"
-                                    "    \\pc	任意漢字\n"
-                                    "    \\ph	任意平仮名\n"
-                                    "    \\pk	任意片仮名\n"
-                                    "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
-                                    "\n"
-                                    "例えば：\n"
-                                    " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
-                                    " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
-                              ],
-                              'Debug': [e.toString()],
-                            }),
-                            'expanded': true
-                          }
-                        ]
-                      : [];
+                int balancedWeight(Map<String, dynamic> item, int bLen) {
+                  return (item['freqRank'] *
+                          (item[searchField].startsWith(searchQuery) &&
+                                  _searchMode == 0
+                              ? 100
+                              : 500) *
+                          pow(1.5 + item['yomikata'].length / bLen,
+                              _searchMode == 0 ? 2.5 : 0))
+                      .round();
                 }
-              }
 
-              final displayItemCountNotifier =
-                  Provider.of<DisplayItemCountNotifier>(context, listen: false);
-              // 考虑displayItemCountNotifier的值
-              final displayCount = displayItemCountNotifier.displayItemCount;
-              final expandedItemCountProvider =
-                  Provider.of<ExpandedItemCountNotifier>(context,
-                      listen: false);
-              final expandedItemCount =
-                  expandedItemCountProvider.expandedItemCount;
-              return InfiniteList<Map<String, dynamic>>(
-                onRequest: queryAuto,
-                itemBuilder: (context, item, index) {
-                  final imiTmp =
-                      jsonDecode(item['imi']) as Map<String, dynamic>;
-
-                  final imi = Map.fromIterable(
-                    imiTmp.entries.take(displayCount),
-                    key: (entry) => entry.key,
-                    value: (entry) => entry.value,
-                  );
-
-                  final pitchData = item['pitchData'] != ''
-                      ? jsonDecode(item['pitchData'])
-                          .map(
-                              (x) => x <= 20 ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x] : '?')
-                          .toList()
-                          .join()
-                      : '';
-                  final word =
-                      item['origForm'] == '' ? item['word'] : item['origForm'];
-
-                  return ListTileTheme(
-                    // dense: true,
-                    child: ExpansionTile(
-                      initiallyExpanded:
-                          item.containsKey('expanded') && item['expanded'],
-                      title: Text(word == item['orig']
-                          ? word
-                          : '$word →〔${item['orig']}〕'),
-                      trailing: item.containsKey('expanded') &&
-                              item['freqRank'] != -1 &&
-                              item['expanded']
-                          ? Container(
-                              padding: const EdgeInsets.all(0.0),
-                              width: 35.0,
-                              child: item.containsKey('loading') &&
-                                      item['loading']
-                                  ? const CircularProgressIndicator()
-                                  : IconButton(
-                                      icon: _hatsuonCache
-                                                  .containsKey(item['idex']) &&
-                                              _hatsuonCache[item['idex']] ==
-                                                  null
-                                          ? const Icon(Icons.error_outline)
-                                          : const Icon(
-                                              IcoFontIcons.soundWaveAlt),
-                                      onPressed: () => _hatsuon(item),
-                                    ),
-                            )
-                          : Text((item['freqRank'] + 1).toString()),
-                      subtitle: Text("${item['yomikata']}$pitchData"),
-                      children: List.from(imi.keys)
-                          .asMap()
-                          .entries
-                          .map<List<Widget>>((s) {
-                        final index1 = s.key;
-                        final dictName = s.value;
-                        return List<List<Widget>>.from(
-                          imi[dictName].asMap().entries.map((entry) {
-                            final index2 = entry.key;
-                            final simi = entry.value;
-                            return <Widget>[
-                              DictionaryTerm(
-                                dictName: dictName,
-                                imi: simi,
-                                queryWord: _setSearchContent,
-                                initialExpanded: index1 < expandedItemCount,
-                              )
-                            ];
+                int bLen = 1 << 31;
+                for (var w in result) {
+                  if (w['yomikata'].length < bLen) {
+                    bLen = w['yomikata'].length;
+                  }
+                }
+                result.sort((a, b) =>
+                    balancedWeight(a, bLen).compareTo(balancedWeight(b, bLen)));
+                return result;
+              } catch (e) {
+                return nextIndex == 0
+                    ? [
+                        {
+                          'word': 'EXCEPTION',
+                          'yomikata': '以下の説明をご覧ください',
+                          'pitchData': '',
+                          'freqRank': -1,
+                          'idex': -1,
+                          'romaji': '',
+                          'orig': 'EXCEPTION',
+                          'origForm': '',
+                          'imi': jsonEncode({
+                            'ヘルプ': [
+                              "LIKE 検索:\n"
+                                  "    _  任意の1文字\n"
+                                  "    %  任意の0文字以上の文字列\n"
+                                  "\n"
+                                  "REGEX 検索:\n"
+                                  "    .  任意の1文字\n"
+                                  "    .*  任意の0文字以上の文字列\n"
+                                  "    .+  任意の1文字以上の文字列\n"
+                                  "    \\pc	任意漢字\n"
+                                  "    \\ph	任意平仮名\n"
+                                  "    \\pk	任意片仮名\n"
+                                  "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
+                                  "\n"
+                                  "例えば：\n"
+                                  " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
+                                  " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
+                            ],
+                            'Debug': [e.toString()],
                           }),
-                        ).reduce((a, b) => a + b);
-                      }).reduce((a, b) => a + b),
-                      onExpansionChanged: (expanded) {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        setState(() => item['expanded'] = expanded);
-                      },
-                    ),
-                  );
-                },
-                key: ValueKey('${searchData}_$_searchMode'),
-              );
-            },
-          ),
+                          'expanded': true
+                        }
+                      ]
+                    : [];
+              }
+            }
+
+            final displayItemCountNotifier =
+                Provider.of<DisplayItemCountNotifier>(context, listen: false);
+            // 考虑displayItemCountNotifier的值
+            final displayCount = displayItemCountNotifier.displayItemCount;
+            final expandedItemCountProvider =
+                Provider.of<ExpandedItemCountNotifier>(context, listen: false);
+            final expandedItemCount =
+                expandedItemCountProvider.expandedItemCount;
+            return InfiniteList<Map<String, dynamic>>(
+              onRequest: queryAuto,
+              itemBuilder: (context, item, index) {
+                final imiTmp = jsonDecode(item['imi']) as Map<String, dynamic>;
+
+                final imi = Map.fromIterable(
+                  imiTmp.entries.take(displayCount),
+                  key: (entry) => entry.key,
+                  value: (entry) => entry.value,
+                );
+
+                final pitchData = item['pitchData'] != ''
+                    ? jsonDecode(item['pitchData'])
+                        .map((x) => x <= 20 ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x] : '?')
+                        .toList()
+                        .join()
+                    : '';
+                final word =
+                    item['origForm'] == '' ? item['word'] : item['origForm'];
+
+                return ExpansionTile(
+                  initiallyExpanded:
+                      item.containsKey('expanded') && item['expanded'],
+                  title: Text(
+                      word == item['orig'] ? word : '$word →〔${item['orig']}〕'),
+                  trailing: item.containsKey('expanded') &&
+                          item['freqRank'] != -1 &&
+                          item['expanded']
+                      ? Container(
+                          padding: const EdgeInsets.all(0.0),
+                          width: 35.0,
+                          child: item.containsKey('loading') && item['loading']
+                              ? const CircularProgressIndicator()
+                              : IconButton(
+                                  icon: _hatsuonCache
+                                              .containsKey(item['idex']) &&
+                                          _hatsuonCache[item['idex']] == null
+                                      ? const Icon(Icons.error_outline)
+                                      : const Icon(IcoFontIcons.soundWaveAlt),
+                                  onPressed: () => _hatsuon(item),
+                                ),
+                        )
+                      : Text((item['freqRank'] + 1).toString()),
+                  subtitle: Text("${item['yomikata']}$pitchData"),
+                  children: List.from(imi.keys)
+                      .asMap()
+                      .entries
+                      .map<List<Widget>>((s) {
+                    final index1 = s.key;
+                    final dictName = s.value;
+                    return List<List<Widget>>.from(
+                      imi[dictName].asMap().entries.map((entry) {
+                        final index2 = entry.key;
+                        final simi = entry.value;
+                        return <Widget>[
+                          DictionaryTerm(
+                            dictName: dictName,
+                            imi: simi,
+                            queryWord: _setSearchContent,
+                            initialExpanded: index1 < expandedItemCount,
+                          )
+                        ];
+                      }),
+                    ).reduce((a, b) => a + b);
+                  }).reduce((a, b) => a + b),
+                  onExpansionChanged: (expanded) {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    setState(() => item['expanded'] = expanded);
+                  },
+                );
+              },
+              key: ValueKey('${searchData}_$_searchMode'),
+            );
+          },
         ),
       ),
     );

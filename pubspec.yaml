@@ -55,6 +55,7 @@ dependencies:
   expandable: ^5.0.1
   flutter_hooks: ^0.18.5+1
   tuple: ^2.0.0
+  logger: ^2.5.0
 
 dev_dependencies:
   flutter_test:
