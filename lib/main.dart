@@ -41,7 +41,7 @@ void main() {
 }
 
 class ThemeNotifier extends ChangeNotifier {
-  late ThemeMode _themeMode;
+  ThemeMode _themeMode = ThemeMode.system;
   static const String _themeModeKey = 'themeMode';
 
   ThemeMode get themeMode => _themeMode;
@@ -821,17 +821,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 }
               }
 
+              final displayItemCountNotifier =
+                  Provider.of<DisplayItemCountNotifier>(context, listen: false);
+              // 考虑displayItemCountNotifier的值
+              final displayCount = displayItemCountNotifier.displayItemCount;
+              final expandedItemCountProvider =
+                  Provider.of<ExpandedItemCountNotifier>(context,
+                      listen: false);
+              final expandedItemCount =
+                  expandedItemCountProvider.expandedItemCount;
               return InfiniteList<Map<String, dynamic>>(
                 onRequest: queryAuto,
                 itemBuilder: (context, item, index) {
                   final imiTmp =
                       jsonDecode(item['imi']) as Map<String, dynamic>;
-                  final displayItemCountNotifier =
-                      Provider.of<DisplayItemCountNotifier>(context,
-                          listen: false);
-                  // 考虑displayItemCountNotifier的值
-                  final displayCount =
-                      displayItemCountNotifier.displayItemCount;
+
                   final imi = Map.fromIterable(
                     imiTmp.entries.take(displayCount),
                     key: (entry) => entry.key,
@@ -848,11 +852,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   final word =
                       item['origForm'] == '' ? item['word'] : item['origForm'];
 
-                  final expandedItemCountProvider =
-                      Provider.of<ExpandedItemCountNotifier>(context,
-                          listen: false);
-                  final expandedItemCount =
-                      expandedItemCountProvider.expandedItemCount;
                   return ListTileTheme(
                     dense: true,
                     child: ExpansionTile(
@@ -888,14 +887,14 @@ class _MyHomePageState extends State<MyHomePage> {
                           .entries
                           .map<List<Widget>>((s) {
                         final index1 = s.key;
-                        final cont = s.value;
+                        final dictName = s.value;
                         return List<List<Widget>>.from(
-                          imi[cont].asMap().entries.map((entry) {
+                          imi[dictName].asMap().entries.map((entry) {
                             final index2 = entry.key;
                             final simi = entry.value;
                             return <Widget>[
                               DictionaryTerm(
-                                dictName: cont,
+                                dictName: dictName,
                                 imi: simi,
                                 queryWord: _setSearchContent,
                                 initialExpanded: index1 < expandedItemCount,
@@ -946,6 +945,7 @@ class _MyHomePageState extends State<MyHomePage> {
             subtitle: Consumer<ThemeNotifier>(
               builder: (context, themeProvider, child) {
                 return DropdownButtonFormField<ThemeMode>(
+                  focusColor: Colors.blue,
                   value: themeProvider._themeMode,
                   items: const [
                     DropdownMenuItem<ThemeMode>(
