@@ -168,10 +168,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ある辞書',
       theme: ThemeData(
-        // appBarTheme: AppBarTheme(
-        //   backgroundColor: Colors.blue[400],
-        //   // elevation: 20.0,
-        // ),
         bottomSheetTheme: BottomSheetThemeData(
           backgroundColor: indigo[100],
           elevation: 8.0,
@@ -185,12 +181,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
-        appBarTheme: AppBarTheme(
-          backgroundColor: indigo[800],
-          // elevation: 20.0,
-        ),
         drawerTheme: DrawerThemeData(surfaceTintColor: indigo[800]),
-        // scaffoldBackgroundColor: Colors.grey[900],
         fontFamily: font,
         colorSchemeSeed: indigo,
         brightness: Brightness.dark,
