@@ -163,37 +163,36 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
+    const font = "NotoSansJP";
+    const colorSeed = Colors.blue;
     return MaterialApp(
       title: 'ある辞書',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColorLight: Colors.blue,
-        primaryColorDark: Colors.blue,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blue,
-          elevation: 20.0,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.blue[400],
+          // elevation: 20.0,
         ),
-        inputDecorationTheme: const InputDecorationTheme(
-          fillColor: Colors.white,
+        bottomSheetTheme:
+            BottomSheetThemeData(backgroundColor: Colors.blue[100]),
+        drawerTheme: DrawerThemeData(
+          surfaceTintColor: Colors.blue[400],
         ),
-        drawerTheme: const DrawerThemeData(
-          surfaceTintColor: Colors.blue,
-        ),
-        fontFamily: "NotoSansJP",
+        fontFamily: font,
         brightness: Brightness.light,
+        colorSchemeSeed: colorSeed,
+        useMaterial3: true,
       ),
       darkTheme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.dark,
-        primaryColorLight: Colors.grey[700],
-        primaryColorDark: Colors.grey[900],
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.blue[800],
-          elevation: 20.0,
+          backgroundColor: Colors.indigo[800],
+          // elevation: 20.0,
         ),
-        drawerTheme: DrawerThemeData(surfaceTintColor: Colors.blue[800]),
+        drawerTheme: DrawerThemeData(surfaceTintColor: Colors.indigo[800]),
         // scaffoldBackgroundColor: Colors.grey[900],
-        fontFamily: "NotoSansJP",
+        fontFamily: font,
+        colorSchemeSeed: Colors.indigo,
+        brightness: Brightness.dark,
+        useMaterial3: true,
       ),
       themeMode: themeNotifier.themeMode,
       initialRoute: '/splash',
@@ -341,12 +340,12 @@ class _DictionaryTermState extends State<DictionaryTerm> {
     return Padding(
       padding: const EdgeInsets.only(top: 0, bottom: 10),
       child: ExpandablePanel(
-        theme: ExpandableThemeData(
+        theme: const ExpandableThemeData(
           iconPadding: EdgeInsets.zero,
-          iconSize: Theme.of(context).textTheme.titleLarge?.fontSize,
+          // iconSize: Theme.of(context).textTheme.titleLarge?.fontSize,
           expandIcon: Icons.arrow_drop_down,
           collapseIcon: Icons.arrow_drop_up,
-          iconColor: Theme.of(context).unselectedWidgetColor,
+          // iconColor: Theme.of(context).unselectedWidgetColor,
           headerAlignment: ExpandablePanelHeaderAlignment.center,
         ),
         controller: _expandControl,
@@ -438,6 +437,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _search(int mode) async {
     if (_controller.text.isEmpty) {
       _searchNotifier.value = null;
+      setState(() {});
       return;
     }
     if (_history.isEmpty || _history.last != _controller.text) {
@@ -627,84 +627,64 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("ある辞書",
-              style: TextStyle(color: Colors.white, fontSize: 20)),
+          title: const Text(
+            "ある辞書",
+          ),
           centerTitle: true,
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48.0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 12.0, bottom: 8.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24.0),
-                    ),
-                    child: SearchBar(
-                      controller: _controller,
-                      trailing: _controller.text.isEmpty
-                          ? []
-                          : [
-                              IconButton(
-                                icon: const Icon(Icons.clear, size: 20),
-                                onPressed: () =>
-                                    setState(() => _controller.clear()),
-                              ),
-                            ],
-                      // textAlignVertical: TextAlignVertical.center,
-                      // decoration: InputDecoration(
-                      //   hintText: "調べたい言葉をご入力してください",
-                      //   contentPadding:
-                      //       const EdgeInsets.fromLTRB(20, 12, 12, 12),
-                      //   border: InputBorder.none,
-                      //   suffixIcon: _controller.text.isEmpty
-                      //       ? null
-                      // : IconButton(
-                      //     icon: const Icon(Icons.clear, size: 20),
-                      //     onPressed: () =>
-                      //         setState(() => _controller.clear()),
-                      //   ),
-                      // ),
-                    ),
+        ),
+        bottomSheet: PreferredSize(
+          preferredSize: const Size.fromHeight(48.0),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.all(8.0),
+                  child: SearchBar(
+                    elevation: const WidgetStatePropertyAll(0.0),
+                    hintText: "調べたい言葉をご入力してください",
+                    controller: _controller,
+                    trailing: _controller.text.isEmpty
+                        ? []
+                        : [
+                            IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: () =>
+                                  setState(() => _controller.clear()),
+                            ),
+                          ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: InkWell(
-                      onTap: () => _search(-1),
-                      onLongPress: () => showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text('頻度コントロール'),
-                            content: TextField(
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp("[0-9]"))
-                              ],
-                              onChanged: (value) {
-                                final v = int.tryParse(value);
-                                if (v != null && v > 0) {
-                                  setState(() => _searchMode = v);
-                                }
-                              },
-                              decoration:
-                                  const InputDecoration(hintText: "頻度ランク（正整数）"),
-                            ),
-                          );
-                        },
-                      ),
-                      child: const Icon(BootstrapIcons.sort_down_alt,
-                          color: Colors.white),
-                    ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: InkWell(
+                  onTap: () => _search(-1),
+                  onLongPress: () => showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('頻度コントロール'),
+                        content: TextField(
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                          ],
+                          onChanged: (value) {
+                            final v = int.tryParse(value);
+                            if (v != null && v > 0) {
+                              setState(() => _searchMode = v);
+                            }
+                          },
+                          decoration:
+                              const InputDecoration(hintText: "頻度ランク（正整数）"),
+                        ),
+                      );
+                    },
                   ),
-                )
-              ],
-            ),
+                  child: const Icon(BootstrapIcons.sort_down_alt),
+                ),
+              )
+            ],
           ),
         ),
         // 添加Drawer
@@ -944,7 +924,6 @@ class _MyHomePageState extends State<MyHomePage> {
             child: const Text(
               '設定',
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 24,
               ),
             ),
@@ -1073,7 +1052,6 @@ class AboutPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('アプリについて'),
-        elevation: 20.0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
