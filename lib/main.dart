@@ -171,6 +171,7 @@ class MyApp extends StatelessWidget {
         primaryColorDark: Colors.blue,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.blue,
+          elevation: 20.0,
         ),
         inputDecorationTheme: const InputDecorationTheme(
           fillColor: Colors.white,
@@ -188,6 +189,7 @@ class MyApp extends StatelessWidget {
         primaryColorDark: Colors.grey[900],
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.blue[800],
+          elevation: 20.0,
         ),
         drawerTheme: DrawerThemeData(surfaceTintColor: Colors.blue[800]),
         // scaffoldBackgroundColor: Colors.grey[900],
@@ -627,6 +629,7 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           title: const Text("ある辞書",
               style: TextStyle(color: Colors.white, fontSize: 20)),
+          centerTitle: true,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48.0),
             child: Row(
@@ -635,25 +638,33 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Container(
                     margin: const EdgeInsets.only(left: 12.0, bottom: 8.0),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2.0),
                       borderRadius: BorderRadius.circular(24.0),
                     ),
-                    child: TextFormField(
+                    child: SearchBar(
                       controller: _controller,
-                      textAlignVertical: TextAlignVertical.center,
-                      decoration: InputDecoration(
-                        hintText: "調べたい言葉をご入力してください",
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(20, 12, 12, 12),
-                        border: InputBorder.none,
-                        suffixIcon: _controller.text.isEmpty
-                            ? null
-                            : IconButton(
+                      trailing: _controller.text.isEmpty
+                          ? []
+                          : [
+                              IconButton(
                                 icon: const Icon(Icons.clear, size: 20),
                                 onPressed: () =>
                                     setState(() => _controller.clear()),
                               ),
-                      ),
+                            ],
+                      // textAlignVertical: TextAlignVertical.center,
+                      // decoration: InputDecoration(
+                      //   hintText: "調べたい言葉をご入力してください",
+                      //   contentPadding:
+                      //       const EdgeInsets.fromLTRB(20, 12, 12, 12),
+                      //   border: InputBorder.none,
+                      //   suffixIcon: _controller.text.isEmpty
+                      //       ? null
+                      // : IconButton(
+                      //     icon: const Icon(Icons.clear, size: 20),
+                      //     onPressed: () =>
+                      //         setState(() => _controller.clear()),
+                      //   ),
+                      // ),
                     ),
                   ),
                 ),
@@ -1062,6 +1073,7 @@ class AboutPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('アプリについて'),
+        elevation: 20.0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
