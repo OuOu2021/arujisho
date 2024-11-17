@@ -164,33 +164,35 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     const font = "NotoSansJP";
-    const colorSeed = Colors.blue;
+    const indigo = Colors.indigo;
     return MaterialApp(
       title: 'ある辞書',
       theme: ThemeData(
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.blue[400],
-          // elevation: 20.0,
+        // appBarTheme: AppBarTheme(
+        //   backgroundColor: Colors.blue[400],
+        //   // elevation: 20.0,
+        // ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: indigo[100],
+          elevation: 8.0,
         ),
-        bottomSheetTheme:
-            BottomSheetThemeData(backgroundColor: Colors.blue[100]),
         drawerTheme: DrawerThemeData(
-          surfaceTintColor: Colors.blue[400],
+          surfaceTintColor: indigo[200],
         ),
         fontFamily: font,
         brightness: Brightness.light,
-        colorSchemeSeed: colorSeed,
+        colorSchemeSeed: indigo,
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.indigo[800],
+          backgroundColor: indigo[800],
           // elevation: 20.0,
         ),
-        drawerTheme: DrawerThemeData(surfaceTintColor: Colors.indigo[800]),
+        drawerTheme: DrawerThemeData(surfaceTintColor: indigo[800]),
         // scaffoldBackgroundColor: Colors.grey[900],
         fontFamily: font,
-        colorSchemeSeed: Colors.indigo,
+        colorSchemeSeed: indigo,
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
@@ -630,7 +632,6 @@ class _MyHomePageState extends State<MyHomePage> {
           title: const Text(
             "ある辞書",
           ),
-          centerTitle: true,
         ),
         bottomSheet: PreferredSize(
           preferredSize: const Size.fromHeight(48.0),
