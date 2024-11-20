@@ -30,6 +30,14 @@ import 'package:arujisho/ruby_text/ruby_text_data.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // make navigation bar transparent
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+    ),
+  );
+  // make flutter draw behind navigation bar
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(
@@ -299,7 +307,7 @@ class InfiniteListState<T> extends State<InfiniteList<T>> {
         ),
       ),
       Positioned(
-        bottom: 80,
+        bottom: 100,
         right: 16,
         child: AnimatedOpacity(
           opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
@@ -417,6 +425,7 @@ class DictionaryTermState extends State<DictionaryTerm> {
         controller: _expandControl,
         header: Wrap(children: [
           InkWell(
+            customBorder: const CircleBorder(),
             onTap: _switchFurigana,
             child: Container(
               decoration: BoxDecoration(
@@ -710,34 +719,31 @@ class MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var searchBarTrailing = <Widget>[
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: InkWell(
-          onTap: () => _search(-1),
-          onLongPress: () => showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('頻度コントロール'),
-                content: TextField(
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                  ],
-                  onChanged: (value) {
-                    final v = int.tryParse(value);
-                    if (v != null && v > 0) {
-                      setState(() => _searchMode = v);
-                    }
-                  },
-                  decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
-                ),
-              );
-            },
-          ),
-          child: const Icon(BootstrapIcons.sort_down_alt),
+      InkWell(
+        onTap: () => _search(-1),
+        onLongPress: () => showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('頻度コントロール'),
+              content: TextField(
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                ],
+                onChanged: (value) {
+                  final v = int.tryParse(value);
+                  if (v != null && v > 0) {
+                    setState(() => _searchMode = v);
+                  }
+                },
+                decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
+              ),
+            );
+          },
         ),
-      )
+        child: const Icon(BootstrapIcons.sort_down_alt),
+      ),
     ];
     if (_controller.text.isNotEmpty) {
       searchBarTrailing.add(IconButton(
@@ -782,12 +788,13 @@ class MyHomePageState extends State<MyHomePage> {
                     .colorScheme
                     .primaryContainer
                     .withOpacity(0.8),
-                // surfaceTintColor:
-                // Theme.of(context).colorScheme.primaryContainer,
+                // surfaceTintColor: Colors.transparent,
+                surfaceTintColor:
+                    Theme.of(context).colorScheme.primaryContainer,
                 // backgroundColor: Theme.of(context).colorScheme.surface,
-                // shadowColor: Theme.of(context).colorScheme.primaryContainer,
+                shadowColor: Theme.of(context).colorScheme.primaryContainer,
                 // shadowColor: Colors.transparent,
-                shadowColor: Colors.black,
+                // shadowColor: Colors.black,
                 scrolledUnderElevation: 2.0,
                 elevation: 0.0,
               ),
@@ -1030,7 +1037,9 @@ class MyHomePageState extends State<MyHomePage> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                   child: SearchBar(
-                      leading: const Icon(Icons.search),
+                      padding: const WidgetStatePropertyAll<EdgeInsets>(
+                          EdgeInsets.only(left: 16.0)),
+                      leading: const Icon(Icons.search, size: 20),
                       backgroundColor: WidgetStatePropertyAll(Theme.of(context)
                           .colorScheme
                           .primaryContainer
@@ -1059,7 +1068,7 @@ class MyHomePageState extends State<MyHomePage> {
         children: <Widget>[
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Theme.of(context).drawerTheme.surfaceTintColor,
+              color: Theme.of(context).colorScheme.primaryContainer,
             ),
             child: const Text(
               '設定',
@@ -1075,7 +1084,6 @@ class MyHomePageState extends State<MyHomePage> {
             subtitle: Consumer<ThemeNotifier>(
               builder: (context, themeProvider, child) {
                 return DropdownButtonFormField<ThemeMode>(
-                  focusColor: Colors.blue,
                   value: themeProvider._themeMode,
                   items: const [
                     DropdownMenuItem<ThemeMode>(
