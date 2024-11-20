@@ -174,10 +174,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ある辞書',
       theme: ThemeData(
-        bottomSheetTheme: BottomSheetThemeData(
-          backgroundColor: indigo[100],
-          elevation: 8.0,
-        ),
         drawerTheme: DrawerThemeData(
           surfaceTintColor: indigo[200],
         ),
@@ -299,7 +295,7 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       ),
       Positioned(
-        bottom: 90,
+        bottom: 80,
         right: 16,
         child: AnimatedOpacity(
           opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
@@ -709,6 +705,43 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var searchBarTrailing = <Widget>[
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+          onTap: () => _search(-1),
+          onLongPress: () => showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('頻度コントロール'),
+                content: TextField(
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                  ],
+                  onChanged: (value) {
+                    final v = int.tryParse(value);
+                    if (v != null && v > 0) {
+                      setState(() => _searchMode = v);
+                    }
+                  },
+                  decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
+                ),
+              );
+            },
+          ),
+          child: const Icon(BootstrapIcons.sort_down_alt),
+        ),
+      )
+    ];
+    if (_controller.text.isNotEmpty) {
+      searchBarTrailing.add(IconButton(
+        icon: const Icon(Icons.clear, size: 20),
+        onPressed: () => _controller.clear(),
+      ));
+    }
+
     return WillPopScope(
       onWillPop: () async {
         if (_historyTimer != null && _historyTimer!.isActive) {
@@ -969,76 +1002,34 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                child: BottomAppBar(
-                  shape: CircularNotchedRectangle(),
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primaryContainer
-                      .withOpacity(0.7),
-                  child: PreferredSize(
-                    preferredSize: const Size.fromHeight(72.0),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: SearchBar(
-                            backgroundColor:
-                                WidgetStatePropertyAll(Colors.transparent),
-                            side: WidgetStatePropertyAll(BorderSide(
-                                width: 2.0,
-                                color: Theme.of(context).primaryColor)),
-                            elevation: const WidgetStatePropertyAll(0.0),
-                            hintText: "調べたい言葉をご入力してください",
-                            controller: _controller,
-                            trailing: _controller.text.isEmpty
-                                ? []
-                                : [
-                                    IconButton(
-                                      icon: const Icon(Icons.clear, size: 20),
-                                      onPressed: () => _controller.clear(),
-                                    ),
-                                  ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: () => _search(-1),
-                            onLongPress: () => showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text('頻度コントロール'),
-                                  content: TextField(
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(
-                                          RegExp("[0-9]"))
-                                    ],
-                                    onChanged: (value) {
-                                      final v = int.tryParse(value);
-                                      if (v != null && v > 0) {
-                                        setState(() => _searchMode = v);
-                                      }
-                                    },
-                                    decoration: const InputDecoration(
-                                        hintText: "頻度ランク（正整数）"),
-                                  ),
-                                );
-                              },
-                            ),
-                            child: const Icon(BootstrapIcons.sort_down_alt),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
+            child: BottomAppBar(
+              // clipBehavior: Clip,
+              // color: Theme.of(context)
+              //     .colorScheme
+              //     .primaryContainer
+              //     .withOpacity(0.7),
+              color: Colors.transparent,
+              child: ClipRRect(
+                // 匹配searchBar的默认圆角大小
+                borderRadius: BorderRadius.circular(28.0),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                  child: SearchBar(
+                      leading: const Icon(Icons.search),
+                      backgroundColor: WidgetStatePropertyAll(Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withOpacity(.7)),
+                      side: WidgetStatePropertyAll(BorderSide(
+                          width: 2.0, color: Theme.of(context).primaryColor)),
+                      elevation: const WidgetStatePropertyAll(0.0),
+                      hintText: "調べたい言葉をご入力してください",
+                      controller: _controller,
+                      trailing: searchBarTrailing),
                 ),
               ),
             ),
-          )
+          ),
         ]),
       ),
     );
