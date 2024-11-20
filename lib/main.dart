@@ -285,7 +285,11 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
           if (index < items.length) {
             return widget.itemBuilder(context, items[index], index);
           } else if (index == items.length && end) {
-            return const Center(child: Text('以上です'));
+            if (items.isEmpty) {
+              return const Center(child: Text('一致する検索結果はありません'));
+            } else {
+              return const Center(child: Text('以上です'));
+            }
           } else {
             _getMoreItems();
             return const Center(child: CircularProgressIndicator());
@@ -724,6 +728,7 @@ class _MyHomePageState extends State<MyHomePage> {
           title: const Text(
             "ある辞書",
           ),
+          centerTitle: true,
           // backgroundColor: Theme.of(context).colorScheme.surface,
           shadowColor: Theme.of(context).shadowColor,
           scrolledUnderElevation: 3.0,
