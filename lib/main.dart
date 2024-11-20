@@ -93,10 +93,10 @@ class ThemeNotifier extends ChangeNotifier {
   }
 }
 
-const int MYINF = 999;
+const int myInf = 999;
 
 class DisplayItemCountNotifier extends ChangeNotifier {
-  int _displayItemCount = MYINF;
+  int _displayItemCount = myInf;
   static const String _displayItemCountKey = 'displayItemCount';
 
   int get displayItemCount => _displayItemCount;
@@ -218,10 +218,10 @@ class InfiniteList<T> extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _InfiniteListState<T> createState() => _InfiniteListState<T>();
+  InfiniteListState<T> createState() => InfiniteListState<T>();
 }
 
-class _InfiniteListState<T> extends State<InfiniteList<T>> {
+class InfiniteListState<T> extends State<InfiniteList<T>> {
   List<T> items = [];
   bool end = false;
   bool showScrollToTopButton = false; // 控制返回顶部按钮的显示
@@ -278,7 +278,7 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
         thickness: 8.0,
         radius: const Radius.circular(6.0),
         child: ListView.builder(
-          padding: const EdgeInsets.only(bottom: 120, top: 70),
+          padding: const EdgeInsets.only(bottom: 120, top: 83),
           controller: _scrollController, // 绑定滚动控制器
           itemBuilder: (context, index) {
             if (index < items.length) {
@@ -338,10 +338,10 @@ class DictionaryTerm extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _DictionaryTermState createState() => _DictionaryTermState();
+  DictionaryTermState createState() => DictionaryTermState();
 }
 
-class _DictionaryTermState extends State<DictionaryTerm> {
+class DictionaryTermState extends State<DictionaryTerm> {
   late final ExpandableController _expandControl;
   List<List<Map<String, String>>>? tokens;
   bool showFurigana = false;
@@ -503,10 +503,10 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  MyHomePageState createState() => MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class MyHomePageState extends State<MyHomePage> {
   late TextEditingController _controller;
   late SearchHistoryNotifier _searchNotifier;
   final Map<int, String?> _hatsuonCache = {};
@@ -841,7 +841,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       'SELECT tt.word,tt.yomikata,tt.pitchData,'
                       'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
                       'FROM (imis JOIN (SELECT * FROM jpdc '
-                      'WHERE ($searchField MATCH "${searchQuery}*" OR r$searchField '
+                      'WHERE ($searchField MATCH "$searchQuery*" OR r$searchField '
                       'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
                       '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
                       'ORDER BY _rowid_ LIMIT $nextIndex,${2 * pageSize}'
@@ -852,9 +852,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       'SELECT tt.word,tt.yomikata,tt.pitchData,'
                       'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
                       'FROM (imis JOIN (SELECT * FROM jpdc '
-                      'WHERE (word $method "${searchQuery}" '
-                      'OR yomikata $method "${searchQuery}" '
-                      'OR romaji $method "${searchQuery}") '
+                      'WHERE (word $method "$searchQuery" '
+                      'OR yomikata $method "$searchQuery" '
+                      'OR romaji $method "$searchQuery") '
                       '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
                       'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
                       ') AS tt ON tt.idex=imis._rowid_)',
@@ -944,11 +944,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     final imiTmp =
                         jsonDecode(item['imi']) as Map<String, dynamic>;
 
-                    final imi = Map.fromIterable(
-                      imiTmp.entries.take(displayCount),
-                      key: (entry) => entry.key,
-                      value: (entry) => entry.value,
-                    );
+                    final imi = {
+                      for (var entry in imiTmp.entries.take(displayCount))
+                        entry.key: entry.value
+                    };
 
                     final pitchData = item['pitchData'] != ''
                         ? jsonDecode(item['pitchData'])
@@ -997,7 +996,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         final dictName = s.value;
                         return List<List<Widget>>.from(
                           imi[dictName].asMap().entries.map((entry) {
-                            final index2 = entry.key;
+                            // final index2 = entry.key;
                             final simi = entry.value;
                             return <Widget>[
                               DictionaryTerm(
@@ -1024,11 +1023,6 @@ class _MyHomePageState extends State<MyHomePage> {
           Align(
             alignment: Alignment.bottomCenter,
             child: BottomAppBar(
-              // clipBehavior: Clip,
-              // color: Theme.of(context)
-              //     .colorScheme
-              //     .primaryContainer
-              //     .withOpacity(0.7),
               color: Colors.transparent,
               child: ClipRRect(
                 // 匹配searchBar的默认圆角大小
@@ -1119,7 +1113,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   items: [
                     const DropdownMenuItem<int>(
-                      value: MYINF,
+                      value: myInf,
                       child: Text('すべて表示'),
                     ),
                     ...List.generate(6, (index) {
@@ -1153,7 +1147,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   items: [
                     const DropdownMenuItem<int?>(
-                      value: MYINF,
+                      value: myInf,
                       child: Text('すべて展開表示'),
                     ),
                     ...List.generate(6, (index) {

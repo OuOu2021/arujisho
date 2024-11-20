@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as Path;
+import 'package:path/path.dart' as path;
 import 'package:video_player/video_player.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,10 +13,10 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  SplashScreenState createState() => SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class SplashScreenState extends State<SplashScreen> {
   // video controller
   late VideoPlayerController _controller;
 
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (_) {}
 
     ByteData data = await rootBundle.load(bundlePath);
-    final zipFile = File(Path.join(
+    final zipFile = File(path.join(
         (await getTemporaryDirectory()).path, bundlePath.split('/').last));
     await zipFile.writeAsBytes(
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _initAppData() async {
     var databasesPath = await getDatabasesPath();
-    var dbPath = Path.join(databasesPath, "arujisho.db");
+    var dbPath = path.join(databasesPath, "arujisho.db");
     var exists = await databaseExists(dbPath);
 
     if (!exists) {
@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
       var f = Future.delayed(const Duration(seconds: 8));
       await _unZip("sudachi.rs/resources/sudachidict.zip",
           await getApplicationSupportDirectory());
-      await _unZip("db/arujisho.db.zip", Directory(Path.dirname(dbPath)));
+      await _unZip("db/arujisho.db.zip", Directory(path.dirname(dbPath)));
       await f;
     }
 
