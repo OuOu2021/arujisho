@@ -724,6 +724,10 @@ class _MyHomePageState extends State<MyHomePage> {
           title: const Text(
             "ある辞書",
           ),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shadowColor: Theme.of(context).shadowColor,
+          scrolledUnderElevation: 3.0,
+          elevation: 0.0,
         ),
         // 添加Drawer
         drawer: _buildDrawer(context),
