@@ -882,82 +882,88 @@ class _MyHomePageState extends State<MyHomePage> {
                       listen: false);
               final expandedItemCount =
                   expandedItemCountProvider.expandedItemCount;
-              return InfiniteList<Map<String, dynamic>>(
-                onRequest: queryAuto,
-                itemBuilder: (context, item, index) {
-                  final imiTmp =
-                      jsonDecode(item['imi']) as Map<String, dynamic>;
+              return Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: InfiniteList<Map<String, dynamic>>(
+                  onRequest: queryAuto,
+                  itemBuilder: (context, item, index) {
+                    final imiTmp =
+                        jsonDecode(item['imi']) as Map<String, dynamic>;
 
-                  final imi = Map.fromIterable(
-                    imiTmp.entries.take(displayCount),
-                    key: (entry) => entry.key,
-                    value: (entry) => entry.value,
-                  );
+                    final imi = Map.fromIterable(
+                      imiTmp.entries.take(displayCount),
+                      key: (entry) => entry.key,
+                      value: (entry) => entry.value,
+                    );
 
-                  final pitchData = item['pitchData'] != ''
-                      ? jsonDecode(item['pitchData'])
-                          .map(
-                              (x) => x <= 20 ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x] : '?')
-                          .toList()
-                          .join()
-                      : '';
-                  final word =
-                      item['origForm'] == '' ? item['word'] : item['origForm'];
+                    final pitchData = item['pitchData'] != ''
+                        ? jsonDecode(item['pitchData'])
+                            .map((x) =>
+                                x <= 20 ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x] : '?')
+                            .toList()
+                            .join()
+                        : '';
+                    final word = item['origForm'] == ''
+                        ? item['word']
+                        : item['origForm'];
 
-                  return ExpansionTile(
-                    initiallyExpanded:
-                        item.containsKey('expanded') && item['expanded'],
-                    title: Text(word == item['orig']
-                        ? word
-                        : '$word →〔${item['orig']}〕'),
-                    trailing: item.containsKey('expanded') &&
-                            item['freqRank'] != -1 &&
-                            item['expanded']
-                        ? Container(
-                            padding: const EdgeInsets.all(0.0),
-                            width: 35.0,
-                            child: item.containsKey('loading') &&
-                                    item['loading']
-                                ? const CircularProgressIndicator()
-                                : IconButton(
-                                    icon: _hatsuonCache
-                                                .containsKey(item['idex']) &&
-                                            _hatsuonCache[item['idex']] == null
-                                        ? const Icon(Icons.error_outline)
-                                        : const Icon(IcoFontIcons.soundWaveAlt),
-                                    onPressed: () => _hatsuon(item),
-                                  ),
-                          )
-                        : Text((item['freqRank'] + 1).toString()),
-                    subtitle: Text("${item['yomikata']}$pitchData"),
-                    children: List.from(imi.keys)
-                        .asMap()
-                        .entries
-                        .map<List<Widget>>((s) {
-                      final index1 = s.key;
-                      final dictName = s.value;
-                      return List<List<Widget>>.from(
-                        imi[dictName].asMap().entries.map((entry) {
-                          final index2 = entry.key;
-                          final simi = entry.value;
-                          return <Widget>[
-                            DictionaryTerm(
-                              dictName: dictName,
-                              imi: simi,
-                              queryWord: _setSearchContent,
-                              initialExpanded: index1 < expandedItemCount,
+                    return ExpansionTile(
+                      initiallyExpanded:
+                          item.containsKey('expanded') && item['expanded'],
+                      title: Text(word == item['orig']
+                          ? word
+                          : '$word →〔${item['orig']}〕'),
+                      trailing: item.containsKey('expanded') &&
+                              item['freqRank'] != -1 &&
+                              item['expanded']
+                          ? Container(
+                              padding: const EdgeInsets.all(0.0),
+                              width: 35.0,
+                              child: item.containsKey('loading') &&
+                                      item['loading']
+                                  ? const CircularProgressIndicator()
+                                  : IconButton(
+                                      icon: _hatsuonCache
+                                                  .containsKey(item['idex']) &&
+                                              _hatsuonCache[item['idex']] ==
+                                                  null
+                                          ? const Icon(Icons.error_outline)
+                                          : const Icon(
+                                              IcoFontIcons.soundWaveAlt),
+                                      onPressed: () => _hatsuon(item),
+                                    ),
                             )
-                          ];
-                        }),
-                      ).reduce((a, b) => a + b);
-                    }).reduce((a, b) => a + b),
-                    onExpansionChanged: (expanded) {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      setState(() => item['expanded'] = expanded);
-                    },
-                  );
-                },
-                key: ValueKey('${searchData}_$_searchMode'),
+                          : Text((item['freqRank'] + 1).toString()),
+                      subtitle: Text("${item['yomikata']}$pitchData"),
+                      children: List.from(imi.keys)
+                          .asMap()
+                          .entries
+                          .map<List<Widget>>((s) {
+                        final index1 = s.key;
+                        final dictName = s.value;
+                        return List<List<Widget>>.from(
+                          imi[dictName].asMap().entries.map((entry) {
+                            final index2 = entry.key;
+                            final simi = entry.value;
+                            return <Widget>[
+                              DictionaryTerm(
+                                dictName: dictName,
+                                imi: simi,
+                                queryWord: _setSearchContent,
+                                initialExpanded: index1 < expandedItemCount,
+                              )
+                            ];
+                          }),
+                        ).reduce((a, b) => a + b);
+                      }).reduce((a, b) => a + b),
+                      onExpansionChanged: (expanded) {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        setState(() => item['expanded'] = expanded);
+                      },
+                    );
+                  },
+                  key: ValueKey('${searchData}_$_searchMode'),
+                ),
               );
             },
           ),
