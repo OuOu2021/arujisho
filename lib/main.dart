@@ -486,6 +486,11 @@ class SearchHistoryNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clear() {
+    _history.clear();
+    notifyListeners();
+  }
+
   void removeLast() {
     if (_history.isNotEmpty) {
       _history.removeLast();
@@ -527,6 +532,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // if (_searchNotifier.isEmpty || _searchNotifier.last.isNotEmpty) {
       //   _searchNotifier.add("");
       // }
+      _searchNotifier.clear();
       return;
     }
     if (_searchNotifier.isEmpty || _searchNotifier.last != _controller.text) {
