@@ -274,25 +274,29 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      ListView.builder(
-        padding: const EdgeInsets.only(bottom: 120),
-        controller: _scrollController, // 绑定滚动控制器
-        itemBuilder: (context, index) {
-          if (index < items.length) {
-            return widget.itemBuilder(context, items[index], index);
-          } else if (index == items.length && end) {
-            if (items.isEmpty) {
-              return const Center(child: Text('一致する検索結果はありません'));
+      Scrollbar(
+        thickness: 8.0,
+        radius: const Radius.circular(6.0),
+        child: ListView.builder(
+          padding: const EdgeInsets.only(bottom: 120),
+          controller: _scrollController, // 绑定滚动控制器
+          itemBuilder: (context, index) {
+            if (index < items.length) {
+              return widget.itemBuilder(context, items[index], index);
+            } else if (index == items.length && end) {
+              if (items.isEmpty) {
+                return const Center(child: Text('一致する検索結果はありません'));
+              } else {
+                return const Center(child: Text('以上です'));
+              }
             } else {
-              return const Center(child: Text('以上です'));
+              _getMoreItems();
+              return const Center(child: CircularProgressIndicator());
             }
-          } else {
-            _getMoreItems();
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-        itemCount: items.length + 1,
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          },
+          itemCount: items.length + 1,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        ),
       ),
       Positioned(
         bottom: 80,
