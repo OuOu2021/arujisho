@@ -279,6 +279,7 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
   Widget build(BuildContext context) {
     return Stack(children: [
       ListView.builder(
+        padding: const EdgeInsets.only(bottom: 100),
         controller: _scrollController, // 绑定滚动控制器
         itemBuilder: (context, index) {
           if (index < items.length) {
