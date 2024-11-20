@@ -278,7 +278,7 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
         thickness: 8.0,
         radius: const Radius.circular(6.0),
         child: ListView.builder(
-          padding: const EdgeInsets.only(bottom: 120),
+          padding: const EdgeInsets.only(bottom: 120, top: 70),
           controller: _scrollController, // 绑定滚动控制器
           itemBuilder: (context, index) {
             if (index < items.length) {
@@ -767,15 +767,32 @@ class _MyHomePageState extends State<MyHomePage> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            "ある辞書",
+        extendBodyBehindAppBar: true,
+        appBar: PreferredSize(
+          preferredSize: Size(MediaQuery.of(context).size.width, 55),
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: AppBar(
+                title: const Text(
+                  "ある辞書",
+                ),
+                centerTitle: true,
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withOpacity(0.8),
+                // surfaceTintColor:
+                // Theme.of(context).colorScheme.primaryContainer,
+                // backgroundColor: Theme.of(context).colorScheme.surface,
+                // shadowColor: Theme.of(context).colorScheme.primaryContainer,
+                // shadowColor: Colors.transparent,
+                shadowColor: Colors.black,
+                scrolledUnderElevation: 2.0,
+                elevation: 0.0,
+              ),
+            ),
           ),
-          centerTitle: true,
-          // backgroundColor: Theme.of(context).colorScheme.surface,
-          shadowColor: Theme.of(context).shadowColor,
-          scrolledUnderElevation: 3.0,
-          elevation: 0.0,
         ),
         // 添加Drawer
         drawer: _buildDrawer(context),
