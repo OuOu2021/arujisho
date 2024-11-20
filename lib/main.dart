@@ -424,25 +424,27 @@ class DictionaryTermState extends State<DictionaryTerm> {
         ),
         controller: _expandControl,
         header: Wrap(children: [
-          InkWell(
-            customBorder: const CircleBorder(),
-            onTap: _switchFurigana,
-            child: Container(
-              decoration: BoxDecoration(
-                color: (MyApp.isRelease ^ (showFurigana && tokens == null))
-                    ? Colors.red[600]
-                    : Colors.blue[400],
-                borderRadius: const BorderRadius.all(Radius.circular(4)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-                child: Text(
-                  widget.dictName,
-                  style: const TextStyle(color: Colors.white),
+          Padding(
+            padding: const EdgeInsets.only(left: 6.0),
+            child: InkWell(
+              onTap: _switchFurigana,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: (MyApp.isRelease ^ (showFurigana && tokens == null))
+                      ? Colors.red[600]
+                      : Colors.blue[400],
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+                  child: Text(
+                    widget.dictName,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ),
-          )
+          ),
         ]),
         collapsed: const SizedBox.shrink(),
         expanded: Padding(
@@ -719,30 +721,33 @@ class MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var searchBarTrailing = <Widget>[
-      InkWell(
-        onTap: () => _search(-1),
-        onLongPress: () => showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('頻度コントロール'),
-              content: TextField(
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                ],
-                onChanged: (value) {
-                  final v = int.tryParse(value);
-                  if (v != null && v > 0) {
-                    setState(() => _searchMode = v);
-                  }
-                },
-                decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
-              ),
-            );
-          },
+      Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: InkWell(
+          onTap: () => _search(-1),
+          onLongPress: () => showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('頻度コントロール'),
+                content: TextField(
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                  ],
+                  onChanged: (value) {
+                    final v = int.tryParse(value);
+                    if (v != null && v > 0) {
+                      setState(() => _searchMode = v);
+                    }
+                  },
+                  decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
+                ),
+              );
+            },
+          ),
+          child: const Icon(BootstrapIcons.sort_down_alt),
         ),
-        child: const Icon(BootstrapIcons.sort_down_alt),
       ),
     ];
     if (_controller.text.isNotEmpty) {
@@ -1037,9 +1042,9 @@ class MyHomePageState extends State<MyHomePage> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                   child: SearchBar(
-                      padding: const WidgetStatePropertyAll<EdgeInsets>(
-                          EdgeInsets.only(left: 16.0)),
-                      leading: const Icon(Icons.search, size: 20),
+                      leading: const Padding(
+                          padding: EdgeInsets.only(left: 8.0),
+                          child: Icon(Icons.search, size: 20)),
                       backgroundColor: WidgetStatePropertyAll(Theme.of(context)
                           .colorScheme
                           .primaryContainer
@@ -1047,7 +1052,7 @@ class MyHomePageState extends State<MyHomePage> {
                       side: WidgetStatePropertyAll(BorderSide(
                           width: 2.0, color: Theme.of(context).primaryColor)),
                       elevation: const WidgetStatePropertyAll(0.0),
-                      hintText: "調べたい言葉をご入力してください",
+                      hintText: "言葉を入力して検索する",
                       controller: _controller,
                       trailing: searchBarTrailing),
                 ),
@@ -1202,7 +1207,7 @@ class AboutPage extends StatelessWidget {
         title: const Text('アプリについて'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: <Widget>[
             const Text(
