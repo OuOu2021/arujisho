@@ -279,7 +279,7 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
   Widget build(BuildContext context) {
     return Stack(children: [
       ListView.builder(
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: const EdgeInsets.only(bottom: 120),
         controller: _scrollController, // 绑定滚动控制器
         itemBuilder: (context, index) {
           if (index < items.length) {
@@ -295,21 +295,26 @@ class _InfiniteListState<T> extends State<InfiniteList<T>> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       ),
       Positioned(
-          bottom: 90,
-          right: 16,
-          child: AnimatedOpacity(
-              opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
-              duration: const Duration(milliseconds: 300), // 动画时长
-              curve: Curves.easeInOut,
-              child: Visibility(
-                // visible: showScrollToTopButton,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    if (showScrollToTopButton) _scrollToTop();
-                  },
-                  child: const Icon(Icons.arrow_upward),
-                ),
-              ))),
+        bottom: 90,
+        right: 16,
+        child: AnimatedOpacity(
+          opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
+          duration: const Duration(milliseconds: 300), // 动画时长
+          curve: Curves.easeInOut,
+          child: Visibility(
+            // visible: showScrollToTopButton,
+            child: Opacity(
+              opacity: 0.92,
+              child: FloatingActionButton(
+                onPressed: () {
+                  if (showScrollToTopButton) _scrollToTop();
+                },
+                child: const Icon(Icons.arrow_upward),
+              ),
+            ),
+          ),
+        ),
+      ),
     ]);
   }
 }
