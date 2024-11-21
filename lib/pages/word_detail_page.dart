@@ -1,4 +1,4 @@
-import 'package:arujisho/prividers/tts_cache_provider.dart';
+import 'package:arujisho/providers/tts_cache_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
@@ -53,7 +53,7 @@ class WordDetailState extends State<WordDetailPage> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
                   child: Row(children: [
                     Text(
                       widget.word,

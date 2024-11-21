@@ -72,9 +72,13 @@ class TtsCacheProvider {
             }
             break;
           }
-        } catch (_) {}
+        } catch (_) {
+          return null;
+        }
       }
-    } catch (_) {}
+    } catch (_) {
+      return null;
+    }
     // setState(() => hatsuonLoading = false);
     if (url != null) {
       _cache[idex] = url;
@@ -103,7 +107,7 @@ class TtsCacheProvider {
         }
       }
     } catch (_) {
-      url = null;
+      return null;
     }
     if (url != null) {
       _cache[idex] = url;
