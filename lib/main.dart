@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:arujisho/prividers/tts_cache_provider.dart';
+import 'package:arujisho/word_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -11,14 +13,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:clipboard_listener/clipboard_listener.dart';
-import 'package:html/parser.dart' show parse;
-import 'package:http/http.dart' as http;
-import 'package:just_audio/just_audio.dart';
 import 'package:kana_kit/kana_kit.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:crypto/crypto.dart' show sha256;
 import 'package:bootstrap_icons/bootstrap_icons.dart';
-import 'package:icofont_flutter/icofont_flutter.dart';
 import 'package:expandable/expandable.dart';
 import 'package:provider/provider.dart';
 
@@ -49,6 +45,9 @@ void main() {
           create: (_) => Logger(printer: PrettyPrinter(), level: Level.debug
               // filter: DevelopmentFilter(),
               )),
+      Provider<TtsCacheProvider>(
+        create: (_) => TtsCacheProvider(),
+      )
     ],
     child: const MyApp(),
   ));
@@ -484,7 +483,7 @@ class DictionaryTermState extends State<DictionaryTerm> {
 }
 
 class SearchHistoryNotifier extends ChangeNotifier {
-  final List<String> _history = [];
+  final List<String> _history = [""];
 
   List<String> get history => List.unmodifiable(_history);
   bool get isEmpty => _history.isEmpty;
@@ -520,7 +519,6 @@ class MyHomePage extends StatefulWidget {
 class MyHomePageState extends State<MyHomePage> {
   late TextEditingController _controller;
   late SearchHistoryNotifier _searchNotifier;
-  final Map<int, String?> _hatsuonCache = {};
 
   static const _kanaKit = KanaKit();
   int _searchMode = 0;
@@ -540,15 +538,17 @@ class MyHomePageState extends State<MyHomePage> {
   /// 搜索新值前，处理搜索历史
   Future<void> _search(int mode) async {
     if (_controller.text.isEmpty) {
-      // if (_searchNotifier.isEmpty || _searchNotifier.last.isNotEmpty) {
-      //   _searchNotifier.add("");
-      // }
-      _searchNotifier.clear();
+      if (_searchNotifier.isEmpty || _searchNotifier.last.isNotEmpty) {
+        _searchNotifier.add("");
+      }
       return;
     }
     if (_searchNotifier.isEmpty || _searchNotifier.last != _controller.text) {
       if (_historyTimer != null && _historyTimer!.isActive) {
         _historyTimer!.cancel();
+        _searchNotifier.removeLast();
+      }
+      if (_searchNotifier.isNotEmpty && _searchNotifier.last.isEmpty) {
         _searchNotifier.removeLast();
       }
       // 查看5秒以上的单词才加入历史
@@ -559,118 +559,6 @@ class MyHomePageState extends State<MyHomePage> {
       _searchNotifier.add(_controller.text);
     }
     _searchMode = mode;
-  }
-
-  Future<void> _hatsuon(Map<String, dynamic> item) async {
-    const burpHeader = {
-      "Sec-Ch-Ua":
-          "\"Chromium\";v=\"104\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"104\"",
-      "Dnt": "1",
-      "Sec-Ch-Ua-Mobile": "?0",
-      "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
-      "Sec-Ch-Ua-Platform": "\"Windows\"",
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Accept": "*/*",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-Mode": "cors",
-      "Sec-Fetch-Dest": "empty",
-      "Accept-Encoding": "gzip, deflate",
-      "Accept-Language":
-          "en-US,en;q=0.9,zh-TW;q=0.8,zh-CN;q=0.7,zh;q=0.6,ja;q=0.5",
-      "Connection": "close"
-    };
-    String? url;
-    if (_hatsuonCache.containsKey(item['idex'])) {
-      url = _hatsuonCache[item['idex']];
-    }
-    if (url == null) {
-      try {
-        var resp = await http.post(
-          Uri.parse(
-              'https://www.japanesepod101.com/learningcenter/reference/dictionary_post'),
-          headers: burpHeader,
-          body: {
-            "post": "dictionary_reference",
-            "match_type": "exact",
-            "search_query": item['word'],
-            "vulgar": "true"
-          },
-        );
-        var dom = parse(resp.body);
-        for (var row in dom.getElementsByClassName('dc-result-row')) {
-          try {
-            var audio = row.getElementsByTagName('audio')[0];
-            var kana = row.getElementsByClassName('dc-vocab_kana')[0].text;
-            if (_kanaKit.toKatakana(item['yomikata']) ==
-                    _kanaKit.toKatakana(kana) ||
-                _kanaKit.toHiragana(kana) == item['yomikata']) {
-              url =
-                  "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=${item['word']}&kana=$kana";
-              setState(() => item['loading'] = true);
-              try {
-                var file = await DefaultCacheManager()
-                    .getSingleFile(url, headers: burpHeader);
-                var hash = await sha256.bind(file.openRead()).first;
-                if (hash.toString() ==
-                    'ae6398b5a27bc8c0a771df6c907ade794be15518174773c58c7c7ddd17098906') {
-                  throw const FormatException("NOT IMPLEMENTED");
-                }
-              } catch (_) {
-                url = audio.getElementsByTagName('source')[0].attributes['src'];
-              }
-              break;
-            }
-          } catch (_) {}
-        }
-      } catch (_) {}
-      setState(() => item['loading'] = false);
-    }
-    if (url == null) {
-      try {
-        var resp = await http.get(
-            Uri.parse("https://forvo.com/word/${item['word']}/#ja"),
-            headers: burpHeader);
-        var dom = parse(resp.body);
-        var ja = dom.getElementById('language-container-ja');
-        var pronunciation =
-            ja!.getElementsByClassName('pronunciations-list')[0];
-        String play = pronunciation
-            .getElementsByClassName('play')[0]
-            .attributes['onclick']!;
-        RegExp exp = RegExp(r"Play\(\d+,'.+','.+',\w+,'([^']+)");
-        String? match = exp.firstMatch(play)?.group(1);
-        if (match != null && match.isNotEmpty) {
-          match = utf8.decode(base64.decode(match));
-          url = 'https://audio00.forvo.com/audios/mp3/$match';
-        } else {
-          exp = RegExp(r"Play\(\d+,'[^']+','([^']+)");
-          match = exp.firstMatch(play)?.group(1);
-          if (match != null) {
-            match = utf8.decode(base64.decode(match));
-            url = 'https://audio00.forvo.com/ogg/$match';
-          }
-        }
-      } catch (_) {
-        url = null;
-      }
-    }
-    if (url != null && url.isNotEmpty) {
-      setState(() => item['loading'] = true);
-      try {
-        final player = AudioPlayer();
-        var file =
-            await DefaultCacheManager().getSingleFile(url, headers: burpHeader);
-        await player.setFilePath(file.path);
-        player.play();
-      } catch (_) {
-        url = null;
-      }
-    }
-    setState(() {
-      _hatsuonCache[item['idex']] = url;
-      item['loading'] = false;
-    });
   }
 
   void _setSearchContent(String text) {
@@ -972,58 +860,52 @@ class MyHomePageState extends State<MyHomePage> {
                         ? item['word']
                         : item['origForm'];
 
-                    return ExpansionTile(
-                      initiallyExpanded:
-                          item.containsKey('expanded') && item['expanded'],
+                    return ListTile(
+                      // initiallyExpanded:
+                      //     item.containsKey('expanded') && item['expanded'],
                       title: Text(word == item['orig']
                           ? word
                           : '$word →〔${item['orig']}〕'),
-                      trailing: item.containsKey('expanded') &&
-                              item['freqRank'] != -1 &&
-                              item['expanded']
-                          ? Container(
-                              padding: const EdgeInsets.all(0.0),
-                              width: 35.0,
-                              child: item.containsKey('loading') &&
-                                      item['loading']
-                                  ? const CircularProgressIndicator()
-                                  : IconButton(
-                                      icon: _hatsuonCache
-                                                  .containsKey(item['idex']) &&
-                                              _hatsuonCache[item['idex']] ==
-                                                  null
-                                          ? const Icon(Icons.error_outline)
-                                          : const Icon(
-                                              IcoFontIcons.soundWaveAlt),
-                                      onPressed: () => _hatsuon(item),
-                                    ),
-                            )
-                          : Text((item['freqRank'] + 1).toString()),
                       subtitle: Text("${item['yomikata']}$pitchData"),
-                      children: List.from(imi.keys)
-                          .asMap()
-                          .entries
-                          .map<List<Widget>>((s) {
-                        final index1 = s.key;
-                        final dictName = s.value;
-                        return List<List<Widget>>.from(
-                          imi[dictName].asMap().entries.map((entry) {
-                            // final index2 = entry.key;
-                            final simi = entry.value;
-                            return <Widget>[
-                              DictionaryTerm(
-                                dictName: dictName,
-                                imi: simi,
-                                queryWord: _setSearchContent,
-                                initialExpanded: index1 < expandedItemCount,
-                              )
-                            ];
-                          }),
-                        ).reduce((a, b) => a + b);
-                      }).reduce((a, b) => a + b),
-                      onExpansionChanged: (expanded) {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        setState(() => item['expanded'] = expanded);
+                      // onExpansionChanged: (expanded) {
+                      //   FocusManager.instance.primaryFocus?.unfocus();
+                      //   setState(() => item['expanded'] = expanded);
+                      // },
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => WordDetailPage(
+                            word: word == item['orig']
+                                ? word
+                                : '$word →〔${item['orig']}〕',
+                            idex: item["idex"],
+                            yomikata: item["yomikata"],
+                            freqRank: item["freqRank"],
+                            details: List.from(imi.keys)
+                                .asMap()
+                                .entries
+                                .map<List<Widget>>((s) {
+                              final index1 = s.key;
+                              final dictName = s.value;
+                              return List<List<Widget>>.from(
+                                imi[dictName].asMap().entries.map((entry) {
+                                  // final index2 = entry.key;
+                                  final simi = entry.value;
+                                  return <Widget>[
+                                    DictionaryTerm(
+                                      dictName: dictName,
+                                      imi: simi,
+                                      queryWord: _setSearchContent,
+                                      initialExpanded:
+                                          index1 < expandedItemCount,
+                                    )
+                                  ];
+                                }),
+                              ).reduce((a, b) => a + b);
+                            }).reduce((a, b) => a + b),
+                          ),
+                        );
                       },
                     );
                   },
