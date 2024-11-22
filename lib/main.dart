@@ -2,6 +2,7 @@ import 'package:arujisho/pages/about.dart';
 import 'package:arujisho/pages/home.dart';
 import 'package:arujisho/providers/display_item_notifier.dart';
 import 'package:arujisho/providers/extended_item_notifier.dart';
+import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/providers/tts_cache_provider.dart';
 import 'package:arujisho/router.dart';
@@ -9,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:arujisho/pages/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +28,7 @@ void main() {
       ),
       ChangeNotifierProvider(create: (_) => DisplayItemCountNotifier()),
       ChangeNotifierProvider(create: (_) => ExpandedItemCountNotifier()),
+      ChangeNotifierProvider(create: (_) => SearchHistoryNotifier()),
       Provider<Logger>(
           create: (_) => Logger(printer: PrettyPrinter(), level: Level.debug
               // filter: DevelopmentFilter(),

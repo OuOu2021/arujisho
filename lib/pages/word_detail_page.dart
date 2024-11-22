@@ -55,9 +55,15 @@ class WordDetailState extends State<WordDetailPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
                   child: Row(children: [
-                    Text(
-                      widget.word,
-                      style: Theme.of(context).textTheme.headlineMedium,
+                    Expanded(
+                      flex: 20,
+                      child: Text(
+                        widget.word,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                        softWrap: true,
+                        maxLines: 2,
+                        overflow: TextOverflow.fade, // 显示溢出的内容（会换行）
+                      ),
                     ),
                     const Spacer(),
                     Text((widget.freqRank + 1).toString()),

@@ -12,6 +12,7 @@ import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/widgets/dictionary_term.dart';
 import 'package:arujisho/widgets/infinite_list.dart';
 import 'package:arujisho/pages/word_detail_page.dart';
+import 'package:arujisho/widgets/search_bar_with_history_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -33,10 +34,8 @@ class MyHomePage extends StatefulWidget {
 
 class MyHomePageState extends State<MyHomePage> {
   late TextEditingController _controller;
-  late SearchHistoryNotifier _searchNotifier;
 
   int _searchMode = 0;
-  Timer? _historyTimer;
   static Database? _db;
 
   Future<Database> get database async {
@@ -51,27 +50,12 @@ class MyHomePageState extends State<MyHomePage> {
 
   /// 搜索新值前，处理搜索历史
   Future<void> _search(int mode) async {
-    if (_controller.text.isEmpty) {
-      if (_searchNotifier.isEmpty || _searchNotifier.last.isNotEmpty) {
-        _searchNotifier.add("");
-      }
-      return;
-    }
-    if (_searchNotifier.isEmpty || _searchNotifier.last != _controller.text) {
-      if (_historyTimer != null && _historyTimer!.isActive) {
-        _historyTimer!.cancel();
-        _searchNotifier.removeLast();
-      }
-      if (_searchNotifier.isNotEmpty && _searchNotifier.last.isEmpty) {
-        _searchNotifier.removeLast();
-      }
-      // 查看5秒以上的单词才加入历史
-      _historyTimer = Timer(const Duration(seconds: 3), () {});
-      // if (_searchNotifier.isNotEmpty && _searchNotifier.last.isEmpty) {
-      //   _searchNotifier.removeLast();
-      // }
-      _searchNotifier.add(_controller.text);
-    }
+    // if (_controller.text.isEmpty) {
+    //   return;
+    // }
+    // if (_historyNotifier.isEmpty || _historyNotifier.last != _controller.text) {
+    //   _historyNotifier.add(_controller.text);
+    // }
     _searchMode = mode;
   }
 
@@ -101,7 +85,6 @@ class MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialInput);
-    _searchNotifier = SearchHistoryNotifier();
     _controller.addListener(() {
       setState(() {
         _search(0);
@@ -113,11 +96,8 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    _historyTimer?.cancel();
-    _historyTimer = null;
     _controller.dispose();
     ClipboardListener.removeListener(_cpListener);
-    _searchNotifier.dispose();
     super.dispose();
   }
 
@@ -162,23 +142,12 @@ class MyHomePageState extends State<MyHomePage> {
 
     return WillPopScope(
       onWillPop: () async {
-        if (_historyTimer != null && _historyTimer!.isActive) {
-          _historyTimer!.cancel();
-          _historyTimer = null;
-          _searchNotifier.removeLast();
-          if (_searchNotifier.isEmpty) {
-            _setSearchContent("");
-          }
-        }
-        if (_searchNotifier.isEmpty) return true;
-        while (_searchNotifier.last == _controller.text &&
-            _searchNotifier.length > 1) {
-          _searchNotifier.removeLast();
-        }
-        final temp = _searchNotifier.last;
-        _searchNotifier.removeLast();
-        _setSearchContent(temp);
-        return false;
+        // final historyNotifier = Provider.of<SearchHistoryNotifier>(context, listen: false);
+        // if (historyNotifier.isEmpty) return true;
+        // final temp = historyNotifier.last;
+        // historyNotifier.removeLast();
+        // _setSearchContent(temp);
+        return true;
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -213,15 +182,13 @@ class MyHomePageState extends State<MyHomePage> {
         drawer: _buildDrawer(context),
         body: Stack(children: [
           ListenableBuilder(
-            listenable: _searchNotifier,
+            listenable: _controller,
             builder: (BuildContext ctx, _) {
-              if (_searchNotifier.isEmpty || _searchNotifier.last == "") {
+              if (_controller.text.isEmpty) {
                 return const Center(child: Text("ご参考になりましたら幸いです"));
               }
-              final logger = Logger();
-              logger.d("${_searchNotifier.history}");
-              final last = _searchNotifier.last;
-              final searchData = last
+
+              final searchData = _controller.text
                   .replaceAll("\\pc", "\\p{Han}")
                   .replaceAll("\\ph", "\\p{Hiragana}")
                   .replaceAll("\\pk", "\\p{Katakana}")
@@ -388,6 +355,11 @@ class MyHomePageState extends State<MyHomePage> {
                       //   setState(() => item['expanded'] = expanded);
                       // },
                       onTap: () {
+                        final historyNotifier =
+                            Provider.of<SearchHistoryNotifier>(context,
+                                listen: false);
+                        historyNotifier.remove(_controller.text);
+                        historyNotifier.addToHead(_controller.text);
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
@@ -434,26 +406,37 @@ class MyHomePageState extends State<MyHomePage> {
             alignment: Alignment.bottomCenter,
             child: BottomAppBar(
               color: Colors.transparent,
-              child: ClipRRect(
-                // 匹配searchBar的默认圆角大小
-                borderRadius: BorderRadius.circular(28.0),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                  child: SearchBar(
-                      leading: const Padding(
-                          padding: EdgeInsets.only(left: 8.0),
-                          child: Icon(Icons.search, size: 20)),
-                      backgroundColor: WidgetStatePropertyAll(Theme.of(context)
-                          .colorScheme
-                          .primaryContainer
-                          .withOpacity(.7)),
-                      side: WidgetStatePropertyAll(BorderSide(
-                          width: 2.0, color: Theme.of(context).primaryColor)),
-                      elevation: const WidgetStatePropertyAll(0.0),
-                      hintText: "言葉を入力して検索する",
-                      controller: _controller,
-                      trailing: searchBarTrailing),
-                ),
+              height: 180,
+              child: Column(
+                verticalDirection: VerticalDirection.up,
+                children: [
+                  ClipRRect(
+                    // 匹配searchBar的默认圆角大小
+                    borderRadius: BorderRadius.circular(28.0),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                      child: SearchBar(
+                          leading: const Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: Icon(Icons.search, size: 20)),
+                          backgroundColor: WidgetStatePropertyAll(
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer
+                                  .withOpacity(.7)),
+                          side: WidgetStatePropertyAll(BorderSide(
+                              width: 2.0,
+                              color: Theme.of(context).primaryColor)),
+                          elevation: const WidgetStatePropertyAll(0.0),
+                          hintText: "言葉を入力して検索する",
+                          controller: _controller,
+                          trailing: searchBarTrailing),
+                    ),
+                  ),
+                  SearchBarWithHistoryChips(
+                    controller: _controller,
+                  ),
+                ],
               ),
             ),
           ),
