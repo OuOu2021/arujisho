@@ -68,7 +68,7 @@ class SplashScreenState extends State<SplashScreen> {
 
     if (!exists) {
       _controller.play();
-      var f = Future.delayed(const Duration(seconds: 8));
+      var f = Future.delayed(const Duration(seconds: 3));
       await _unZip("sudachi.rs/resources/sudachidict.zip",
           await getApplicationSupportDirectory());
       await _unZip("db/arujisho.db.zip", Directory(path.dirname(dbPath)));

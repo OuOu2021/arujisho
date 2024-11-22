@@ -82,13 +82,21 @@ class InfiniteListState<T> extends State<InfiniteList<T>> {
               return widget.itemBuilder(context, items[index], index);
             } else if (index == items.length && end) {
               if (items.isEmpty) {
-                return const Center(child: Text('一致する検索結果はありません'));
+                return const Center(
+                    child: Padding(
+                  padding: EdgeInsets.only(top: 50),
+                  child: Text('一致する検索結果はありません'),
+                ));
               } else {
                 return const Center(child: Text('以上です'));
               }
             } else {
               _getMoreItems();
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                  child: Padding(
+                padding: EdgeInsets.only(top: 50),
+                child: CircularProgressIndicator(),
+              ));
             }
           },
           itemCount: items.length + 1,
