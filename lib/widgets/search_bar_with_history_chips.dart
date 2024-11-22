@@ -75,8 +75,7 @@ class SearchBarWithHistoryChipsState extends State<SearchBarWithHistoryChips> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            width: 2.0,
-                            color: Theme.of(context).colorScheme.primary),
+                            width: 2.0, color: Theme.of(context).primaryColor),
                         color: Theme.of(context).colorScheme.primaryContainer,
                       ),
                       child: Wrap(
