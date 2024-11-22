@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="me.xydustc.arujisho">
+    package="com.ouou2021.arujisho">
    <uses-permission android:name="android.permission.INTERNET"/>
    <application
         android:label="ある辞書"
@@ -31,7 +31,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" android:host="arujisho" />
+                <data android:scheme="http" android:host="ouou2021.github.io/arujisho/" />
                 <data android:scheme="https" />
             </intent-filter>
         </activity>

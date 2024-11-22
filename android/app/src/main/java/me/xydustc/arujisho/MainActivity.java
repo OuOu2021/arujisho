@@ -1,6 +1,5 @@
-package me.xydustc.arujisho;
+package com.ouou2021.arujisho;
 
 import io.flutter.embedding.android.FlutterActivity;
 
-public class MainActivity extends FlutterActivity {
-}
+public class MainActivity extends FlutterActivity {}

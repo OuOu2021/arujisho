@@ -9,7 +9,9 @@ final router = GoRouter(
     GoRoute(
       path: MyHomePage.routeName,
       builder: (context, state) => MyHomePage(
-        initialInput: state.uri.queryParameters['search'],
+        initialInput: state.uri.queryParameters.containsKey('search')
+            ? state.uri.queryParameters['search']
+            : null,
       ),
     ),
     GoRoute(

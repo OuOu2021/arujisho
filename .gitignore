@@ -59,3 +59,7 @@ database_build/jisho/*
 !database_build/jisho/.keep
 database_build/*.pkl
 android/app/src/main/jniLibs/*
+
+key.properties
+**/*.keystore
+**/*.jks

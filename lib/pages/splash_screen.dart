@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as path;
 import 'package:video_player/video_player.dart';
 import 'package:sqflite/sqflite.dart';
@@ -75,8 +76,7 @@ class SplashScreenState extends State<SplashScreen> {
     }
 
     if (!mounted) return;
-    Navigator.pop(context);
-    Navigator.pushReplacementNamed(context, '/');
+    context.go('/');
   }
 
   @override

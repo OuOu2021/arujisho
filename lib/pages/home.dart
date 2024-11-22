@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:arujisho/cjconvert.dart';
+import 'package:arujisho/pages/about.dart';
 import 'package:arujisho/providers/display_item_notifier.dart';
 import 'package:arujisho/providers/extended_item_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
@@ -13,6 +14,7 @@ import 'package:arujisho/widgets/infinite_list.dart';
 import 'package:arujisho/pages/word_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
@@ -580,8 +582,7 @@ class MyHomePageState extends State<MyHomePage> {
             leading: const Icon(Icons.info),
             title: const Text('アプリについて'),
             onTap: () {
-              Navigator.pop(context); // 关闭Drawer
-              Navigator.pushNamed(context, '/about');
+              context.push(AboutPage.routeName);
             },
           ),
         ],
