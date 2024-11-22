@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 
 class SplashScreen extends StatefulWidget {
+  static const routeName = '/splash';
   const SplashScreen({Key? key}) : super(key: key);
 
   @override

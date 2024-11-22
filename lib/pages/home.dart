@@ -21,7 +21,9 @@ import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+  static const routeName = '/';
+  final String? initialInput;
+  const MyHomePage({Key? key, this.initialInput}) : super(key: key);
 
   @override
   MyHomePageState createState() => MyHomePageState();
@@ -96,7 +98,7 @@ class MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: widget.initialInput);
     _searchNotifier = SearchHistoryNotifier();
     _controller.addListener(() {
       setState(() {

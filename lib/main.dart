@@ -4,6 +4,7 @@ import 'package:arujisho/providers/display_item_notifier.dart';
 import 'package:arujisho/providers/extended_item_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/providers/tts_cache_provider.dart';
+import 'package:arujisho/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -51,7 +52,7 @@ class MyApp extends StatelessWidget {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     const font = "NotoSansJP";
     const indigo = Colors.indigo;
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'ある辞書',
       theme: ThemeData(
         drawerTheme: DrawerThemeData(
@@ -73,12 +74,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: themeNotifier.themeMode,
-      initialRoute: '/splash',
-      routes: {
-        '/': (context) => const MyHomePage(),
-        '/splash': (context) => const SplashScreen(),
-        '/about': (context) => const AboutPage(),
-      },
+      routerConfig: router,
     );
   }
 }
