@@ -107,6 +107,7 @@ class MyHomePageState extends State<MyHomePage> {
         _search(0);
       });
     });
+    _search(0);
     ClipboardListener.addListener(_cpListener);
   }
 

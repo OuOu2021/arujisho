@@ -19,6 +19,11 @@ class SearchHistoryNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  void remove(String item) {
+    _history.remove(item);
+    notifyListeners();
+  }
+
   void removeLast() {
     if (_history.isNotEmpty) {
       _history.removeLast();
