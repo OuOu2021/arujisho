@@ -75,7 +75,7 @@ class InfiniteListState<T> extends State<InfiniteList<T>> {
         thickness: 8.0,
         radius: const Radius.circular(6.0),
         child: ListView.builder(
-          padding: const EdgeInsets.only(bottom: 120, top: 83),
+          padding: const EdgeInsets.only(bottom: 120, top: 90),
           controller: _scrollController, // 绑定滚动控制器
           itemBuilder: (context, index) {
             if (index < items.length) {
