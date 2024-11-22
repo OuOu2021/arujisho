@@ -29,7 +29,9 @@ class ExpandedItemCountNotifier extends ChangeNotifier {
 
   Future<void> _loadExpandedItemCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int expandedItemCount = prefs.getInt(_expandedItemCountKey)!;
-    _expandedItemCount = expandedItemCount;
+    int? expandedItemCount = prefs.getInt(_expandedItemCountKey);
+    if (expandedItemCount != null) {
+      _expandedItemCount = expandedItemCount;
+    }
   }
 }

@@ -10,12 +10,9 @@ class DisplayItemCountNotifier extends ChangeNotifier {
   int get displayItemCount => _displayItemCount;
 
   DisplayItemCountNotifier() {
-    _init();
-  }
-
-  Future<void> _init() async {
-    await _loadDisplayItemCount();
-    notifyListeners(); // Notify listeners after loading the theme mode
+    _loadDisplayItemCount().then((_) {
+      notifyListeners();
+    });
   }
 
   Future<void> setDisplayItemCount(int i) async {
@@ -31,7 +28,9 @@ class DisplayItemCountNotifier extends ChangeNotifier {
 
   Future<void> _loadDisplayItemCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int displayItemCount = prefs.getInt(_displayItemCountKey)!;
-    _displayItemCount = displayItemCount;
+    int? displayItemCount = prefs.getInt(_displayItemCountKey);
+    if (displayItemCount != null) {
+      _displayItemCount = displayItemCount;
+    }
   }
 }
