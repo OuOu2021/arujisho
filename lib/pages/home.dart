@@ -377,6 +377,7 @@ class MyHomePageState extends State<MyHomePage> {
                           ? word
                           : '$word →〔${item['orig']}〕'),
                       subtitle: Text("${item['yomikata']}$pitchData"),
+                      trailing: Text((item['freqRank']).toString()),
                       // onExpansionChanged: (expanded) {
                       //   FocusManager.instance.primaryFocus?.unfocus();
                       //   setState(() => item['expanded'] = expanded);

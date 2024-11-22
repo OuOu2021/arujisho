@@ -23,7 +23,6 @@
 ## [Technical Details](docs/technical-details.md)
 
 ## TODO
-- sticky header
 - optimize performance
   - interrupt useless query
 - better history system
@@ -34,3 +33,4 @@
 - ios REGEX support
 - full-width/half-width unification
 - dictionary sequences and allow disable
+- deep link
