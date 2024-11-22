@@ -157,6 +157,17 @@ class MyHomePageState extends State<MyHomePage> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
               child: AppBar(
+                actions: [
+                  IconButton(
+                    onPressed: () {
+                      Provider.of<SearchHistoryNotifier>(context, listen: false)
+                          .clear();
+                    },
+                    tooltip: '履歴を全部削除',
+                    icon: const Icon(Icons.cleaning_services),
+                    iconSize: 24,
+                  )
+                ],
                 title: const Text(
                   "ある辞書",
                 ),
