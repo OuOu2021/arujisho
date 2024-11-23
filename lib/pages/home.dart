@@ -409,61 +409,68 @@ class MyHomePageState extends State<MyHomePage> {
               },
             ),
           ]),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: BottomAppBar(
-              color: Colors.transparent,
-              height: 180,
-              child: Column(
-                verticalDirection: VerticalDirection.up,
-                children: [
-                  ClipRRect(
-                    // 匹配searchBar的默认圆角大小
-                    borderRadius: BorderRadius.circular(28.0),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
-                      child: SearchBar(
-                          leading: const Padding(
-                              padding: EdgeInsets.only(left: 8.0),
-                              child: Icon(Icons.search, size: 20)),
-                          backgroundColor: WidgetStatePropertyAll(
-                              Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withOpacity(.7)),
-                          side: WidgetStatePropertyAll(BorderSide(
-                              width: 2.0,
-                              color: Theme.of(context).primaryColor)),
-                          elevation: const WidgetStatePropertyAll(0.0),
-                          hintText: "言葉を入力して検索する",
-                          controller: _controller,
-                          trailing: searchBarTrailing),
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 100,
-            right: 16,
-            child: AnimatedOpacity(
-              opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
-              duration: const Duration(milliseconds: 300), // 动画时长
-              curve: Curves.easeInOut,
-              child: Visibility(
-                // visible: showScrollToTopButton,
-                child: Opacity(
-                  opacity: 0.92,
-                  child: FloatingActionButton(
-                    onPressed: () {
-                      if (showScrollToTopButton) _scrollToTop();
-                    },
-                    child: const Icon(Icons.arrow_upward),
+          Column(
+            verticalDirection: VerticalDirection.up,
+            children: [
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: BottomAppBar(
+                  color: Colors.transparent,
+                  // height: 80,
+                  child: Column(
+                    verticalDirection: VerticalDirection.up,
+                    children: [
+                      ClipRRect(
+                        // 匹配searchBar的默认圆角大小
+                        borderRadius: BorderRadius.circular(28.0),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
+                          child: SearchBar(
+                              leading: const Padding(
+                                  padding: EdgeInsets.only(left: 8.0),
+                                  child: Icon(Icons.search, size: 20)),
+                              backgroundColor: WidgetStatePropertyAll(
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                      .withOpacity(.7)),
+                              side: WidgetStatePropertyAll(BorderSide(
+                                  width: 2.0,
+                                  color: Theme.of(context).primaryColor)),
+                              elevation: const WidgetStatePropertyAll(0.0),
+                              hintText: "言葉を入力して検索する",
+                              controller: _controller,
+                              trailing: searchBarTrailing),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ),
-            ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20.0),
+                  child: AnimatedOpacity(
+                    opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
+                    duration: const Duration(milliseconds: 300), // 动画时长
+                    curve: Curves.easeInOut,
+                    child: Visibility(
+                      // visible: showScrollToTopButton,
+                      child: Opacity(
+                        opacity: 0.92,
+                        child: FloatingActionButton(
+                          onPressed: () {
+                            if (showScrollToTopButton) _scrollToTop();
+                          },
+                          child: const Icon(Icons.arrow_upward),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ]),
       ),
@@ -596,7 +603,7 @@ class MyHomePageState extends State<MyHomePage> {
             leading: const Icon(Icons.brightness_6),
             title: const Text(
               'テーマモード設定',
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16),
             ),
             subtitle: Consumer<ThemeNotifier>(
               builder: (context, themeProvider, child) {
