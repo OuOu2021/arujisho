@@ -436,7 +436,7 @@ class MyHomePageState extends State<MyHomePage> {
                     // 匹配searchBar的默认圆角大小
                     borderRadius: BorderRadius.circular(28.0),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                      filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
                       child: SearchBar(
                           leading: const Padding(
                               padding: EdgeInsets.only(left: 8.0),
@@ -491,7 +491,7 @@ class MyHomePageState extends State<MyHomePage> {
       preferredSize: Size.fromHeight(history.isEmpty ? 50 : 150),
       child: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
           child: AppBar(
             bottom: history.isEmpty
                 ? PreferredSize(
@@ -543,18 +543,23 @@ class MyHomePageState extends State<MyHomePage> {
       snap: true,
       // stretch: true,
       // collapsedHeight: 56,
-      expandedHeight: 90,
+      expandedHeight: 80,
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          constraints: const BoxConstraints(maxHeight: 28),
-          padding: const EdgeInsets.only(top: 62.0),
-          child: HistoryChips(
-            setText: (item) {
-              _setSearchContent(item);
-            },
+        background: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
+          child: Container(
+            color: Colors.transparent,
+            constraints: const BoxConstraints(maxHeight: 30),
+            padding: const EdgeInsets.only(
+                top: 80.0, left: 10.0, right: 10.0, bottom: 6.0),
+            child: HistoryChips(
+              setText: (item) {
+                _setSearchContent(item);
+              },
+            ),
           ),
         ),
-        expandedTitleScale: 1.0,
+        // expandedTitleScale: 1.0,
       ),
       actions: [
         IconButton(
@@ -571,7 +576,7 @@ class MyHomePageState extends State<MyHomePage> {
       ),
       centerTitle: true,
       backgroundColor:
-          Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
+          Theme.of(context).colorScheme.primaryContainer.withOpacity(0.7),
       // surfaceTintColor: Colors.transparent,
       surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
       // backgroundColor: Theme.of(context).colorScheme.surface,

@@ -39,19 +39,18 @@ class HistoryChipsState extends State<HistoryChips> {
   Widget build(BuildContext context) {
     final notifier = Provider.of<SearchHistoryNotifier>(context);
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       scrollDirection: Axis.horizontal,
       children: notifier.history.take(20).map((historyItem) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2.0),
           child: GestureDetector(
-              // onTap: () {
-              //   if (_isDeleteMode) {
-              //     notifier.remove(historyItem);
-              //   } else {
-              //     widget.setText(historyItem);
-              //   }
-              // },
+              onTap: () {
+                if (_isDeleteMode) {
+                  // notifier.remove(historyItem);
+                } else {
+                  widget.setText(historyItem);
+                }
+              },
               onLongPress: () {
                 setState(() {
                   _isDeleteMode = !_isDeleteMode;
@@ -64,8 +63,10 @@ class HistoryChipsState extends State<HistoryChips> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      width: 1.5, color: Theme.of(context).primaryColor),
-                  color: Theme.of(context).colorScheme.primaryContainer,
+                      width: 1.5,
+                      color: Theme.of(context).primaryColor.withOpacity(.7)),
+                  // color: Theme.of(context).colorScheme.primaryContainer,
+                  color: Colors.transparent,
                 ),
                 child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -74,11 +75,7 @@ class HistoryChipsState extends State<HistoryChips> {
                       if (_isDeleteMode)
                         GestureDetector(
                           onTap: () {
-                            if (_isDeleteMode) {
-                              notifier.remove(historyItem);
-                            } else {
-                              widget.setText(historyItem);
-                            }
+                            notifier.remove(historyItem);
                           },
                           child: const Icon(Icons.close, size: 12),
                         ),
