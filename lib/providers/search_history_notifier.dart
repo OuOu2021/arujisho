@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 class SearchHistoryNotifier extends ChangeNotifier {
-  final List<String> _history = [];
+  final List<String> _history = [/*"test1", "test2"*/];
 
   List<String> get history => List.unmodifiable(_history);
   bool get isEmpty => _history.isEmpty;
