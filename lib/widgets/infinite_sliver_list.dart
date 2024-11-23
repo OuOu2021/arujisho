@@ -58,9 +58,11 @@ class InfiniteSliverListState<T> extends State<InfiniteSliverList<T>> {
       builderDelegate: PagedChildBuilderDelegate<T>(
         itemBuilder: (context, item, index) =>
             widget.itemBuilder(context, item, index),
-        noItemsFoundIndicatorBuilder: (context) => const Padding(
-            padding: EdgeInsets.only(top: 50),
-            child: Center(child: Text('一致する検索結果はありません'))),
+        noItemsFoundIndicatorBuilder: (context) => const Center(
+            child: Text(
+          '一致する検索結果はありません',
+          style: TextStyle(fontSize: 18),
+        )),
         noMoreItemsIndicatorBuilder: (context) => const Padding(
           padding: EdgeInsets.only(top: 10, bottom: 120),
           child: Center(child: Text('以上です')),

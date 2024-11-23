@@ -203,7 +203,7 @@ class SudachiFfiWire implements FlutterRustBridgeWireBase {
   }
 }
 
-class wire_uint_8_list extends ffi.Struct {
+final class wire_uint_8_list extends ffi.Struct {
   external ffi.Pointer<ffi.Uint8> ptr;
 
   @ffi.Int32()

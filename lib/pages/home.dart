@@ -200,8 +200,11 @@ class MyHomePageState extends State<MyHomePage> {
                   body = const SliverToBoxAdapter(
                       child: Center(
                           child: Padding(
-                    padding: EdgeInsets.only(top: 20.0),
-                    child: Text("ご参考になりましたら幸いです"),
+                    padding: EdgeInsets.only(top: 200.0),
+                    child: Text(
+                      "ご参考になりましたら幸いです",
+                      style: TextStyle(fontSize: 18),
+                    ),
                   )));
                 } else {
                   final searchData = _controller.text
@@ -543,7 +546,7 @@ class MyHomePageState extends State<MyHomePage> {
       expandedHeight: 85,
       flexibleSpace: FlexibleSpaceBar(
         background: Padding(
-          padding: const EdgeInsets.only(top: 70.0, left: 10),
+          padding: const EdgeInsets.only(top: 62.0),
           child: SearchBarWithHistoryChips(
             setText: (item) {
               _setSearchContent(item);
