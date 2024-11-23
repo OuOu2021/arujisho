@@ -40,7 +40,15 @@ class HistoryChipsState extends State<HistoryChips> {
     final notifier = Provider.of<SearchHistoryNotifier>(context);
     return ListView(
       scrollDirection: Axis.horizontal,
-      children: notifier.history.take(20).map((historyItem) {
+      children: notifier.history.asMap().entries.take(20).map((entry) {
+        final index = entry.key;
+        final historyItem = entry.value;
+        final color = switch (index % 3) {
+          0 => Theme.of(context).colorScheme.primaryContainer.withOpacity(.7),
+          1 => Theme.of(context).colorScheme.secondaryContainer.withOpacity(.7),
+          2 => Theme.of(context).colorScheme.tertiaryContainer.withOpacity(.7),
+          int() => throw UnimplementedError(),
+        };
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2.0),
           child: GestureDetector(
@@ -66,7 +74,7 @@ class HistoryChipsState extends State<HistoryChips> {
                       width: 1.5,
                       color: Theme.of(context).primaryColor.withOpacity(.7)),
                   // color: Theme.of(context).colorScheme.primaryContainer,
-                  color: Colors.transparent,
+                  color: color,
                 ),
                 child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
