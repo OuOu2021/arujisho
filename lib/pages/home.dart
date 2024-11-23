@@ -12,7 +12,7 @@ import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/widgets/dictionary_term.dart';
 import 'package:arujisho/pages/word_detail_page.dart';
 import 'package:arujisho/widgets/infinite_sliver_list.dart';
-import 'package:arujisho/widgets/search_bar_with_history_chips.dart';
+import 'package:arujisho/widgets/history_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -497,7 +497,7 @@ class MyHomePageState extends State<MyHomePage> {
                 ? PreferredSize(
                     preferredSize: const Size.fromHeight(46),
                     child: Consumer<SearchHistoryNotifier>(
-                      builder: (context, hist, _) => SearchBarWithHistoryChips(
+                      builder: (context, hist, _) => HistoryChips(
                         setText: (item) {
                           _setSearchContent(item);
                         },
@@ -548,7 +548,7 @@ class MyHomePageState extends State<MyHomePage> {
         background: Container(
           constraints: const BoxConstraints(maxHeight: 28),
           padding: const EdgeInsets.only(top: 62.0),
-          child: SearchBarWithHistoryChips(
+          child: HistoryChips(
             setText: (item) {
               _setSearchContent(item);
             },

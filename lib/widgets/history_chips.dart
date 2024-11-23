@@ -2,16 +2,15 @@ import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class SearchBarWithHistoryChips extends StatefulWidget {
+class HistoryChips extends StatefulWidget {
   final Function(String item) setText;
-  const SearchBarWithHistoryChips({super.key, required this.setText});
+  const HistoryChips({super.key, required this.setText});
 
   @override
-  SearchBarWithHistoryChipsState createState() =>
-      SearchBarWithHistoryChipsState();
+  HistoryChipsState createState() => HistoryChipsState();
 }
 
-class SearchBarWithHistoryChipsState extends State<SearchBarWithHistoryChips> {
+class HistoryChipsState extends State<HistoryChips> {
   final FocusNode _focusNode = FocusNode();
   bool _isDeleteMode = false;
 
