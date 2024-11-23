@@ -43,10 +43,16 @@ class HistoryChipsState extends State<HistoryChips> {
       children: notifier.history.asMap().entries.take(20).map((entry) {
         final index = entry.key;
         final historyItem = entry.value;
-        final color = switch (index % 3) {
+        final contColor = switch (index % 3) {
           0 => Theme.of(context).colorScheme.primaryContainer.withOpacity(.7),
           1 => Theme.of(context).colorScheme.secondaryContainer.withOpacity(.7),
           2 => Theme.of(context).colorScheme.tertiaryContainer.withOpacity(.7),
+          int() => throw UnimplementedError(),
+        };
+        final bordColor = switch (index % 3) {
+          0 => Theme.of(context).colorScheme.primary.withOpacity(.7),
+          1 => Theme.of(context).colorScheme.secondary.withOpacity(.7),
+          2 => Theme.of(context).colorScheme.tertiary.withOpacity(.7),
           int() => throw UnimplementedError(),
         };
         return Padding(
@@ -71,10 +77,11 @@ class HistoryChipsState extends State<HistoryChips> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      width: 1.5,
-                      color: Theme.of(context).primaryColor.withOpacity(.7)),
+                    width: 1.5,
+                    color: bordColor,
+                  ),
                   // color: Theme.of(context).colorScheme.primaryContainer,
-                  color: color,
+                  color: contColor,
                 ),
                 child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,

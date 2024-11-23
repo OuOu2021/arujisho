@@ -3,7 +3,7 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchHistoryNotifier extends ChangeNotifier {
-  List<String> _history = ['[help]'];
+  List<String> _history = ['help['];
   static const String _historyCountKey = 'searchHistory';
   // List.generate(10, (index) => 'test${index + 1}');
 
