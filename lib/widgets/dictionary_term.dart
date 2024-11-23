@@ -15,12 +15,12 @@ class DictionaryTerm extends StatefulWidget {
   final bool initialExpanded;
 
   const DictionaryTerm({
-    Key? key,
+    super.key,
     required this.dictName,
     required this.imi,
     required this.queryWord,
     this.initialExpanded = false,
-  }) : super(key: key);
+  });
 
   @override
   DictionaryTermState createState() => DictionaryTermState();

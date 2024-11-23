@@ -9,10 +9,10 @@ class InfiniteList<T> extends StatefulWidget {
   final ItemBuilder<T> itemBuilder;
 
   const InfiniteList({
-    Key? key,
+    super.key,
     required this.onRequest,
     required this.itemBuilder,
-  }) : super(key: key);
+  });
 
   @override
   InfiniteListState<T> createState() => InfiniteListState<T>();

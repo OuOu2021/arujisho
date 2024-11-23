@@ -13,6 +13,7 @@ import 'package:arujisho/widgets/infinite_sliver_list.dart';
 import 'package:arujisho/widgets/history_chips.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
@@ -23,13 +24,13 @@ import 'package:provider/provider.dart';
 class MyHomePage extends StatefulWidget {
   static const routeName = '/';
   final String? initialInput;
-  const MyHomePage({Key? key, this.initialInput}) : super(key: key);
+  const MyHomePage({super.key, this.initialInput});
 
   @override
   MyHomePageState createState() => MyHomePageState();
 }
 
-class MyHomePageState extends State<MyHomePage> {
+class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late TextEditingController _controller;
   bool showScrollToTopButton = false;
   late ScrollController _scrollController;
@@ -170,260 +171,283 @@ class MyHomePageState extends State<MyHomePage> {
         extendBodyBehindAppBar: true,
         drawer: buildDrawer(context),
         body: Stack(children: [
-          PrimaryScrollController(
+          NestedScrollView(
             controller: _scrollController,
-            child: CupertinoScrollbar(
-              controller: _scrollController,
-              // interactive: true,
-              radius: const Radius.circular(8.0),
-              thickness: 6.0,
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  _buildSliverAppBar(context),
-                  SliverPersistentHeader(
-                    pinned: false,
-                    floating: true,
-                    delegate: _StickyHeaderDelegate(
-                      child: HistoryChips(
-                        setText: (item) {
-                          _setSearchContent(item);
-                        },
-                      ),
+            floatHeaderSlivers: true,
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) => [
+              SliverOverlapAbsorber(
+                handle:
+                    NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                sliver: _buildSliverAppBar(context, innerBoxIsScrolled),
+              ),
+              if (Provider.of<SearchHistoryNotifier>(context).isNotEmpty)
+                SliverPersistentHeader(
+                  pinned: true,
+                  floating: true,
+                  delegate: _StickyHeaderDelegate(
+                    vsync: this,
+                    minHeight: 70.0,
+                    maxHeight: 120.0,
+                    child: HistoryChips(
+                      padding: const EdgeInsets.only(top: 85),
+                      setText: (item) {
+                        _setSearchContent(item);
+                      },
                     ),
                   ),
-                  ListenableBuilder(
-                    listenable: _controller,
-                    builder: (BuildContext ctx, _) {
-                      Widget body;
+                ),
+            ],
+            body: Builder(
+              builder: (BuildContext context) {
+                return CustomScrollView(
+                  // physics: const NeverScrollableScrollPhysics(),
+                  // controller: _scrollController,
+                  slivers: [
+                    // header是SliverAppBar是不需要显式写Injector
 
-                      if (_controller.text.isEmpty) {
-                        body = const SliverToBoxAdapter(
-                            child: Center(
-                                child: Padding(
-                          padding: EdgeInsets.only(top: 200.0),
-                          child: Text(
-                            "ご参考になりましたら幸いです",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        )));
-                      } else {
-                        final searchData = _controller.text
-                            .replaceAll("\\pc", "\\p{Han}")
-                            .replaceAll("\\ph", "\\p{Hiragana}")
-                            .replaceAll("\\pk", "\\p{Katakana}")
-                            .split('')
-                            .map<String>(
-                                (c) => cjdc.containsKey(c) ? cjdc[c]! : c)
-                            .join();
-                        Future<List<Map<String, dynamic>>> queryAuto(
-                            int nextIndex, int pageSize) async {
-                          if (nextIndex % pageSize != 0) return [];
+                    // SliverOverlapInjector(
+                    //   // 这里注入SliverOverlapAbsorberHandle来处理重叠
+                    //   handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                    //       context),
+                    // ),
 
-                          final db = await database;
-                          String searchField = 'word';
-                          String method = "MATCH";
-                          List<Map<String, dynamic>> result = [];
-                          final searchQuery = searchData.toLowerCase();
+                    ListenableBuilder(
+                      listenable: _controller,
+                      builder: (BuildContext ctx, _) {
+                        Widget body;
 
-                          if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
-                            searchField = 'romaji';
-                          } else if (RegExp(r'^[ぁ-ゖー]+$')
-                              .hasMatch(searchQuery)) {
-                            searchField = 'yomikata';
-                          } else if (RegExp(r'[\.\+\[\]\*\^\$\?]')
-                              .hasMatch(searchQuery)) {
-                            method = 'REGEXP';
-                          } else if (RegExp(r'[_%]').hasMatch(searchQuery)) {
-                            method = 'LIKE';
-                          }
+                        if (_controller.text.isEmpty) {
+                          body = const SliverToBoxAdapter(
+                              child: Center(
+                                  child: Padding(
+                            padding: EdgeInsets.only(top: 200.0),
+                            child: Text(
+                              "ご参考になりましたら幸いです",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          )));
+                        } else {
+                          final searchData = _controller.text
+                              .replaceAll("\\pc", "\\p{Han}")
+                              .replaceAll("\\ph", "\\p{Hiragana}")
+                              .replaceAll("\\pk", "\\p{Katakana}")
+                              .split('')
+                              .map<String>(
+                                  (c) => cjdc.containsKey(c) ? cjdc[c]! : c)
+                              .join();
+                          Future<List<Map<String, dynamic>>> queryAuto(
+                              int nextIndex, int pageSize) async {
+                            if (nextIndex % pageSize != 0) return [];
 
-                          try {
-                            if (method == "MATCH") {
-                              result = List.of(await db.rawQuery(
-                                'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                                'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                                'FROM (imis JOIN (SELECT * FROM jpdc '
-                                'WHERE ($searchField MATCH "$searchQuery*" OR r$searchField '
-                                'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
-                                '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
-                                'ORDER BY _rowid_ LIMIT $nextIndex, $pageSize'
-                                ') AS tt ON tt.idex=imis._rowid_)',
-                              ));
-                            } else {
-                              result = List.of(await db.rawQuery(
-                                'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                                'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                                'FROM (imis JOIN (SELECT * FROM jpdc '
-                                'WHERE (word $method "$searchQuery" '
-                                'OR yomikata $method "$searchQuery" '
-                                'OR romaji $method "$searchQuery") '
-                                '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
-                                'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
-                                ') AS tt ON tt.idex=imis._rowid_)',
-                              ));
+                            final db = await database;
+                            String searchField = 'word';
+                            String method = "MATCH";
+                            List<Map<String, dynamic>> result = [];
+                            final searchQuery = searchData.toLowerCase();
+
+                            if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
+                              searchField = 'romaji';
+                            } else if (RegExp(r'^[ぁ-ゖー]+$')
+                                .hasMatch(searchQuery)) {
+                              searchField = 'yomikata';
+                            } else if (RegExp(r'[\.\+\[\]\*\^\$\?]')
+                                .hasMatch(searchQuery)) {
+                              method = 'REGEXP';
+                            } else if (RegExp(r'[_%]').hasMatch(searchQuery)) {
+                              method = 'LIKE';
                             }
 
-                            result = result.map((qRow) {
-                              final map = <String, dynamic>{};
-                              qRow.forEach((key, value) => map[key] = value);
-                              return map;
-                            }).toList();
-
-                            int balancedWeight(
-                                Map<String, dynamic> item, int bLen) {
-                              return (item['freqRank'] *
-                                      (item[searchField]
-                                                  .startsWith(searchQuery) &&
-                                              _searchMode == 0
-                                          ? 100
-                                          : 500) *
-                                      pow(1.5 + item['yomikata'].length / bLen,
-                                          _searchMode == 0 ? 2.5 : 0))
-                                  .round();
-                            }
-
-                            int bLen = 1 << 31;
-                            for (var w in result) {
-                              if (w['yomikata'].length < bLen) {
-                                bLen = w['yomikata'].length;
+                            try {
+                              if (method == "MATCH") {
+                                result = List.of(await db.rawQuery(
+                                  'SELECT tt.word,tt.yomikata,tt.pitchData,'
+                                  'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
+                                  'FROM (imis JOIN (SELECT * FROM jpdc '
+                                  'WHERE ($searchField MATCH "$searchQuery*" OR r$searchField '
+                                  'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
+                                  '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
+                                  'ORDER BY _rowid_ LIMIT $nextIndex, $pageSize'
+                                  ') AS tt ON tt.idex=imis._rowid_)',
+                                ));
+                              } else {
+                                result = List.of(await db.rawQuery(
+                                  'SELECT tt.word,tt.yomikata,tt.pitchData,'
+                                  'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
+                                  'FROM (imis JOIN (SELECT * FROM jpdc '
+                                  'WHERE (word $method "$searchQuery" '
+                                  'OR yomikata $method "$searchQuery" '
+                                  'OR romaji $method "$searchQuery") '
+                                  '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
+                                  'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
+                                  ') AS tt ON tt.idex=imis._rowid_)',
+                                ));
                               }
-                            }
-                            result.sort((a, b) => balancedWeight(a, bLen)
-                                .compareTo(balancedWeight(b, bLen)));
-                            return result;
-                          } catch (e) {
-                            return nextIndex == 0
-                                ? [
-                                    {
-                                      'word': 'EXCEPTION',
-                                      'yomikata': '以下の説明をご覧ください',
-                                      'pitchData': '',
-                                      'freqRank': -1,
-                                      'idex': -1,
-                                      'romaji': '',
-                                      'orig': 'EXCEPTION',
-                                      'origForm': '',
-                                      'imi': jsonEncode({
-                                        'ヘルプ': [
-                                          "LIKE 検索:\n"
-                                              "    _  任意の1文字\n"
-                                              "    %  任意の0文字以上の文字列\n"
-                                              "\n"
-                                              "REGEX 検索:\n"
-                                              "    .  任意の1文字\n"
-                                              "    .*  任意の0文字以上の文字列\n"
-                                              "    .+  任意の1文字以上の文字列\n"
-                                              "    \\pc	任意漢字\n"
-                                              "    \\ph	任意平仮名\n"
-                                              "    \\pk	任意片仮名\n"
-                                              "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
-                                              "\n"
-                                              "例えば：\n"
-                                              " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
-                                              " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
-                                        ],
-                                        'Debug': [e.toString()],
-                                      }),
-                                    }
-                                  ]
-                                : [];
-                          }
-                        }
 
-                        final itemCountNotifier =
-                            Provider.of<ItemCountNotifier>(context,
-                                listen: false);
-                        // 考虑displayItemCountNotifier的值
-                        final displayCount = itemCountNotifier.displayItemCount;
-                        final expandedItemCount =
-                            itemCountNotifier.expandedItemCount;
-                        body = InfiniteSliverList<Map<String, dynamic>>(
-                          // itemExtent: 50.0,
-                          onRequest: queryAuto,
-                          itemBuilder: (context, item, index) {
-                            final imiTmp =
-                                jsonDecode(item['imi']) as Map<String, dynamic>;
+                              result = result.map((qRow) {
+                                final map = <String, dynamic>{};
+                                qRow.forEach((key, value) => map[key] = value);
+                                return map;
+                              }).toList();
 
-                            final imi = {
-                              for (var entry
-                                  in imiTmp.entries.take(displayCount))
-                                entry.key: entry.value
-                            };
+                              int balancedWeight(
+                                  Map<String, dynamic> item, int bLen) {
+                                return (item['freqRank'] *
+                                        (item[searchField]
+                                                    .startsWith(searchQuery) &&
+                                                _searchMode == 0
+                                            ? 100
+                                            : 500) *
+                                        pow(
+                                            1.5 +
+                                                item['yomikata'].length / bLen,
+                                            _searchMode == 0 ? 2.5 : 0))
+                                    .round();
+                              }
 
-                            final pitchData = item['pitchData'] != ''
-                                ? jsonDecode(item['pitchData'])
-                                    .map((x) => x <= 20
-                                        ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x]
-                                        : '?')
-                                    .toList()
-                                    .join()
-                                : '';
-                            final word = item['origForm'] == ''
-                                ? item['word']
-                                : item['origForm'];
-
-                            return ListTile(
-                              title: Text(word == item['orig']
-                                  ? word
-                                  : '$word →〔${item['orig']}〕'),
-                              subtitle: Text("${item['yomikata']}$pitchData"),
-                              trailing: Text((item['freqRank']).toString()),
-                              onTap: () {
-                                final historyNotifier =
-                                    Provider.of<SearchHistoryNotifier>(context,
-                                        listen: false);
-                                historyNotifier.remove(_controller.text);
-                                historyNotifier.addToHead(_controller.text);
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  builder: (_) => WordDetailPage(
-                                    word: word == item['orig']
-                                        ? word
-                                        : '$word →〔${item['orig']}〕',
-                                    idex: item["idex"],
-                                    yomikata: item["yomikata"],
-                                    freqRank: item["freqRank"],
-                                    details: List.from(imi.keys)
-                                        .asMap()
-                                        .entries
-                                        .map<List<Widget>>((s) {
-                                      final index1 = s.key;
-                                      final dictName = s.value;
-                                      return List<List<Widget>>.from(
-                                        imi[dictName]
-                                            .asMap()
-                                            .entries
-                                            .map((entry) {
-                                          // final index2 = entry.key;
-                                          final simi = entry.value;
-                                          return <Widget>[
-                                            DictionaryTerm(
-                                              dictName: dictName,
-                                              imi: simi,
-                                              queryWord: _setSearchContent,
-                                              initialExpanded:
-                                                  index1 < expandedItemCount,
-                                            )
-                                          ];
+                              int bLen = 1 << 31;
+                              for (var w in result) {
+                                if (w['yomikata'].length < bLen) {
+                                  bLen = w['yomikata'].length;
+                                }
+                              }
+                              result.sort((a, b) => balancedWeight(a, bLen)
+                                  .compareTo(balancedWeight(b, bLen)));
+                              return result;
+                            } catch (e) {
+                              return nextIndex == 0
+                                  ? [
+                                      {
+                                        'word': 'EXCEPTION',
+                                        'yomikata': '以下の説明をご覧ください',
+                                        'pitchData': '',
+                                        'freqRank': -1,
+                                        'idex': -1,
+                                        'romaji': '',
+                                        'orig': 'EXCEPTION',
+                                        'origForm': '',
+                                        'imi': jsonEncode({
+                                          'ヘルプ': [
+                                            "LIKE 検索:\n"
+                                                "    _  任意の1文字\n"
+                                                "    %  任意の0文字以上の文字列\n"
+                                                "\n"
+                                                "REGEX 検索:\n"
+                                                "    .  任意の1文字\n"
+                                                "    .*  任意の0文字以上の文字列\n"
+                                                "    .+  任意の1文字以上の文字列\n"
+                                                "    \\pc	任意漢字\n"
+                                                "    \\ph	任意平仮名\n"
+                                                "    \\pk	任意片仮名\n"
+                                                "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
+                                                "\n"
+                                                "例えば：\n"
+                                                " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
+                                                " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
+                                          ],
+                                          'Debug': [e.toString()],
                                         }),
-                                      ).reduce((a, b) => a + b);
-                                    }).reduce((a, b) => a + b),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          key: ValueKey('${searchData}_$_searchMode'),
-                        );
-                      }
+                                      }
+                                    ]
+                                  : [];
+                            }
+                          }
 
-                      return body;
-                    },
-                  ),
-                ],
-              ),
+                          final itemCountNotifier =
+                              Provider.of<ItemCountNotifier>(context,
+                                  listen: false);
+                          // 考虑displayItemCountNotifier的值
+                          final displayCount =
+                              itemCountNotifier.displayItemCount;
+                          final expandedItemCount =
+                              itemCountNotifier.expandedItemCount;
+                          body = InfiniteSliverList<Map<String, dynamic>>(
+                            // itemExtent: 50.0,
+                            onRequest: queryAuto,
+                            itemBuilder: (context, item, index) {
+                              final imiTmp = jsonDecode(item['imi'])
+                                  as Map<String, dynamic>;
+
+                              final imi = {
+                                for (var entry
+                                    in imiTmp.entries.take(displayCount))
+                                  entry.key: entry.value
+                              };
+
+                              final pitchData = item['pitchData'] != ''
+                                  ? jsonDecode(item['pitchData'])
+                                      .map((x) => x <= 20
+                                          ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x]
+                                          : '?')
+                                      .toList()
+                                      .join()
+                                  : '';
+                              final word = item['origForm'] == ''
+                                  ? item['word']
+                                  : item['origForm'];
+
+                              return ListTile(
+                                title: Text(word == item['orig']
+                                    ? word
+                                    : '$word →〔${item['orig']}〕'),
+                                subtitle: Text("${item['yomikata']}$pitchData"),
+                                trailing: Text((item['freqRank']).toString()),
+                                onTap: () {
+                                  final historyNotifier =
+                                      Provider.of<SearchHistoryNotifier>(
+                                          context,
+                                          listen: false);
+                                  historyNotifier.remove(_controller.text);
+                                  historyNotifier.addToHead(_controller.text);
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    builder: (_) => WordDetailPage(
+                                      word: word == item['orig']
+                                          ? word
+                                          : '$word →〔${item['orig']}〕',
+                                      idex: item["idex"],
+                                      yomikata: item["yomikata"],
+                                      freqRank: item["freqRank"],
+                                      details: List.from(imi.keys)
+                                          .asMap()
+                                          .entries
+                                          .map<List<Widget>>((s) {
+                                        final index1 = s.key;
+                                        final dictName = s.value;
+                                        return List<List<Widget>>.from(
+                                          imi[dictName]
+                                              .asMap()
+                                              .entries
+                                              .map((entry) {
+                                            // final index2 = entry.key;
+                                            final simi = entry.value;
+                                            return <Widget>[
+                                              DictionaryTerm(
+                                                dictName: dictName,
+                                                imi: simi,
+                                                queryWord: _setSearchContent,
+                                                initialExpanded:
+                                                    index1 < expandedItemCount,
+                                              )
+                                            ];
+                                          }),
+                                        ).reduce((a, b) => a + b);
+                                      }).reduce((a, b) => a + b),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            key: ValueKey('${searchData}_$_searchMode'),
+                          );
+                        }
+                        return body;
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Column(
@@ -494,12 +518,14 @@ class MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  SliverAppBar _buildSliverAppBar(BuildContext context) {
+  SliverAppBar _buildSliverAppBar(
+      BuildContext context, bool innerBoxIsScrolled) {
     return SliverAppBar(
       floating: true,
       pinned: true,
       snap: true,
       expandedHeight: 80,
+      forceElevated: innerBoxIsScrolled,
       flexibleSpace: FlexibleSpaceBar(
         background: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
@@ -535,8 +561,16 @@ class MyHomePageState extends State<MyHomePage> {
 
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
-
-  _StickyHeaderDelegate({required this.child});
+  final double minHeight;
+  final double maxHeight;
+  @override
+  final TickerProvider vsync;
+  _StickyHeaderDelegate({
+    required this.child,
+    required this.minHeight,
+    required this.maxHeight,
+    required this.vsync,
+  });
 
   @override
   Widget build(
@@ -545,11 +579,18 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 30.0;
+  double get maxExtent => maxHeight;
   @override
-  double get minExtent => 0.0;
+  double get minExtent => minHeight;
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
     return true;
   }
+
+  @override
+  FloatingHeaderSnapConfiguration get snapConfiguration =>
+      FloatingHeaderSnapConfiguration(
+        curve: Curves.linear,
+        duration: const Duration(milliseconds: 100),
+      );
 }

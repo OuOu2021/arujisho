@@ -12,7 +12,7 @@ import 'package:flutter_archive/flutter_archive.dart';
 
 class SplashScreen extends StatefulWidget {
   static const routeName = '/splash';
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   SplashScreenState createState() => SplashScreenState();

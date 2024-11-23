@@ -42,7 +42,7 @@ const int myInf = 999;
 class MyApp extends StatelessWidget {
   static const isRelease = true;
 
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

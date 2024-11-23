@@ -57,7 +57,7 @@ class TtsCacheProvider {
           if (_kanaKit.toKatakana(yomikata) == _kanaKit.toKatakana(kana) ||
               _kanaKit.toHiragana(kana) == yomikata) {
             url =
-                "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=${word}&kana=$kana";
+                "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=$word&kana=$kana";
             // setState(() => hatsuonLoading = true);
             try {
               var file = await DefaultCacheManager()
@@ -85,7 +85,7 @@ class TtsCacheProvider {
       return url;
     }
     try {
-      var resp = await http.get(Uri.parse("https://forvo.com/word/${word}/#ja"),
+      var resp = await http.get(Uri.parse("https://forvo.com/word/$word/#ja"),
           headers: burpHeader);
       var dom = parse(resp.body);
       var ja = dom.getElementById('language-container-ja');

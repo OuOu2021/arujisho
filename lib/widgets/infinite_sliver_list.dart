@@ -11,10 +11,10 @@ class InfiniteSliverList<T> extends StatefulWidget {
   final ItemBuilder<T> itemBuilder;
 
   const InfiniteSliverList({
-    Key? key,
+    super.key,
     required this.onRequest,
     required this.itemBuilder,
-  }) : super(key: key);
+  });
 
   @override
   InfiniteSliverListState<T> createState() => InfiniteSliverListState<T>();
