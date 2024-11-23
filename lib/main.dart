@@ -1,5 +1,4 @@
-import 'package:arujisho/providers/display_item_notifier.dart';
-import 'package:arujisho/providers/extended_item_notifier.dart';
+import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/providers/tts_cache_provider.dart';
@@ -24,8 +23,7 @@ void main() {
       ChangeNotifierProvider(
         create: (_) => ThemeNotifier(),
       ),
-      ChangeNotifierProvider(create: (_) => DisplayItemCountNotifier()),
-      ChangeNotifierProvider(create: (_) => ExpandedItemCountNotifier()),
+      ChangeNotifierProvider(create: (_) => ItemCountNotifier()),
       ChangeNotifierProvider(create: (_) => SearchHistoryNotifier()),
       Provider<Logger>(
           create: (_) => Logger(printer: PrettyPrinter(), level: Level.debug
@@ -60,6 +58,8 @@ class MyApp extends StatelessWidget {
         fontFamily: font,
         brightness: Brightness.light,
         colorSchemeSeed: indigo,
+        sliderTheme:
+            SliderThemeData(overlayShape: SliderComponentShape.noOverlay),
         // appBarTheme: AppBarTheme(
         //     scrolledUnderElevation: 6.0, surfaceTintColor: Colors.transparent),
         // shadowColor: Colors.transparent,
@@ -70,6 +70,8 @@ class MyApp extends StatelessWidget {
         fontFamily: font,
         colorSchemeSeed: indigo,
         brightness: Brightness.dark,
+        sliderTheme:
+            SliderThemeData(overlayShape: SliderComponentShape.noOverlay),
         useMaterial3: true,
       ),
       themeMode: themeNotifier.themeMode,

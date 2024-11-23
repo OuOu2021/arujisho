@@ -5,12 +5,13 @@ import 'dart:ui';
 
 import 'package:arujisho/cjconvert.dart';
 import 'package:arujisho/pages/about.dart';
-import 'package:arujisho/providers/display_item_notifier.dart';
-import 'package:arujisho/providers/extended_item_notifier.dart';
+import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/widgets/dictionary_term.dart';
 import 'package:arujisho/pages/word_detail_page.dart';
+import 'package:arujisho/widgets/display_item_count_tile.dart';
+import 'package:arujisho/widgets/expanded_item_count_tile.dart';
 import 'package:arujisho/widgets/infinite_sliver_list.dart';
 import 'package:arujisho/widgets/history_chips.dart';
 import 'package:flutter/material.dart';
@@ -181,16 +182,6 @@ class MyHomePageState extends State<MyHomePage> {
         body: Stack(children: [
           CustomScrollView(controller: _scrollController, slivers: [
             _buildSliverAppBar(context),
-            // SliverToBoxAdapter(child: Placeholder()),
-            // SliverList(
-            //   delegate: SliverChildListDelegate([
-            //     FlutterLogo(),
-            //     FlutterLogo(size: 200),
-            //     FlutterLogo(size: 100),
-            //     FlutterLogo(size: 50),
-            //     FlutterLogo(size: 200),
-            //   ]),
-            // ),
             ListenableBuilder(
               listenable: _controller,
               builder: (BuildContext ctx, _) {
@@ -327,17 +318,11 @@ class MyHomePageState extends State<MyHomePage> {
                     }
                   }
 
-                  final displayItemCountNotifier =
-                      Provider.of<DisplayItemCountNotifier>(context,
-                          listen: false);
+                  final itemCountNotifier =
+                      Provider.of<ItemCountNotifier>(context, listen: false);
                   // 考虑displayItemCountNotifier的值
-                  final displayCount =
-                      displayItemCountNotifier.displayItemCount;
-                  final expandedItemCountProvider =
-                      Provider.of<ExpandedItemCountNotifier>(context,
-                          listen: false);
-                  final expandedItemCount =
-                      expandedItemCountProvider.expandedItemCount;
+                  final displayCount = itemCountNotifier.displayItemCount;
+                  final expandedItemCount = itemCountNotifier.expandedItemCount;
                   body = InfiniteSliverList<Map<String, dynamic>>(
                     // itemExtent: 50.0,
                     onRequest: queryAuto,
@@ -609,7 +594,10 @@ class MyHomePageState extends State<MyHomePage> {
           // 主题模式设置
           ListTile(
             leading: const Icon(Icons.brightness_6),
-            title: const Text('テーマモード設定'),
+            title: const Text(
+              'テーマモード設定',
+              style: const TextStyle(fontSize: 16),
+            ),
             subtitle: Consumer<ThemeNotifier>(
               builder: (context, themeProvider, child) {
                 return DropdownButtonFormField<ThemeMode>(
@@ -617,15 +605,24 @@ class MyHomePageState extends State<MyHomePage> {
                   items: const [
                     DropdownMenuItem<ThemeMode>(
                       value: ThemeMode.system,
-                      child: Text('システムに従う'),
+                      child: Text(
+                        'システムに従う',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                     DropdownMenuItem<ThemeMode>(
                       value: ThemeMode.light,
-                      child: Text('明るいモード'),
+                      child: Text(
+                        '明るいモード',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                     DropdownMenuItem<ThemeMode>(
                       value: ThemeMode.dark,
-                      child: Text('暗いモード'),
+                      child: Text(
+                        '暗いモード',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ],
                   onChanged: (ThemeMode? value) {
@@ -637,73 +634,13 @@ class MyHomePageState extends State<MyHomePage> {
               },
             ),
           ),
+          const SizedBox(height: 10),
           // 显示条目数
-          ListTile(
-            leading: const Icon(Icons.list),
-            // title: const Text('表示件数'),
-            subtitle: Consumer<DisplayItemCountNotifier>(
-              builder: (context, displayProvider, child) {
-                return DropdownButtonFormField<int>(
-                  value: displayProvider.displayItemCount,
-                  decoration: const InputDecoration(
-                    labelText: '表示件数',
-                  ),
-                  items: [
-                    const DropdownMenuItem<int>(
-                      value: myInf,
-                      child: Text('すべて表示'),
-                    ),
-                    ...List.generate(6, (index) {
-                      int value = index + 1;
-                      return DropdownMenuItem<int>(
-                        value: value,
-                        child: Text('$value'),
-                      );
-                    }),
-                  ],
-                  onChanged: (int? value) {
-                    if (value != null) {
-                      displayProvider.setDisplayItemCount(value);
-                    }
-                  },
-                );
-              },
-            ),
-          ),
-
+          const DisplayItemCountTile(),
+          const SizedBox(height: 10),
           // 详细显示条目数
-          ListTile(
-            leading: const Icon(Icons.list_alt),
-            // title: const Text('展開件数'),
-            subtitle: Consumer<ExpandedItemCountNotifier>(
-              builder: (context, expendedProvider, child) {
-                return DropdownButtonFormField<int?>(
-                  value: expendedProvider.expandedItemCount,
-                  decoration: const InputDecoration(
-                    labelText: '展開件数',
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: myInf,
-                      child: Text('すべて展開表示'),
-                    ),
-                    ...List.generate(6, (index) {
-                      int value = index + 1;
-                      return DropdownMenuItem<int>(
-                        value: value,
-                        child: Text('$value'),
-                      );
-                    }),
-                  ],
-                  onChanged: (int? value) {
-                    if (value != null) {
-                      expendedProvider.setExpandedItemCount(value);
-                    }
-                  },
-                );
-              },
-            ),
-          ),
+          const ExpandedItemCountTile(),
+          const SizedBox(height: 10),
           // 关于
           ListTile(
             leading: const Icon(Icons.info),
