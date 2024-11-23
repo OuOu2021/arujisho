@@ -35,6 +35,8 @@ class MyHomePage extends StatefulWidget {
 
 class MyHomePageState extends State<MyHomePage> {
   late TextEditingController _controller;
+  bool showScrollToTopButton = false; // 控制返回顶部按钮的显示
+  late ScrollController _scrollController; // 用于监听滚动
 
   int _searchMode = 0;
   static Database? _db;
@@ -93,12 +95,36 @@ class MyHomePageState extends State<MyHomePage> {
     });
     _search(0);
     ClipboardListener.addListener(_cpListener);
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset > 150) {
+      if (!showScrollToTopButton) {
+        setState(() => showScrollToTopButton = true);
+      }
+    } else {
+      if (showScrollToTopButton) {
+        setState(() => showScrollToTopButton = false);
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
     ClipboardListener.removeListener(_cpListener);
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -155,7 +181,7 @@ class MyHomePageState extends State<MyHomePage> {
         // 添加Drawer
         drawer: _buildDrawer(context),
         body: Stack(children: [
-          CustomScrollView(slivers: [
+          CustomScrollView(controller: _scrollController, slivers: [
             _buildSliverAppBar(context),
             // SliverToBoxAdapter(child: Placeholder()),
             // SliverList(
@@ -429,6 +455,27 @@ class MyHomePageState extends State<MyHomePage> {
                     ),
                   )
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 100,
+            right: 16,
+            child: AnimatedOpacity(
+              opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
+              duration: const Duration(milliseconds: 300), // 动画时长
+              curve: Curves.easeInOut,
+              child: Visibility(
+                // visible: showScrollToTopButton,
+                child: Opacity(
+                  opacity: 0.92,
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      if (showScrollToTopButton) _scrollToTop();
+                    },
+                    child: const Icon(Icons.arrow_upward),
+                  ),
+                ),
               ),
             ),
           ),
