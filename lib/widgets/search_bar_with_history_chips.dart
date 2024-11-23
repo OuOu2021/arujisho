@@ -39,64 +39,54 @@ class SearchBarWithHistoryChipsState extends State<SearchBarWithHistoryChips> {
   @override
   Widget build(BuildContext context) {
     final notifier = Provider.of<SearchHistoryNotifier>(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        scrollDirection: Axis.horizontal,
-        children: notifier.history.take(20).map((historyItem) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-            child: GestureDetector(
-                onTap: () {
-                  if (_isDeleteMode) {
-                    notifier.remove(historyItem);
-                  } else {
-                    widget.setText(historyItem);
-                    // widget.controller.text = historyItem;
-                  }
-                },
-                onLongPress: () {
-                  setState(() {
-                    _isDeleteMode = !_isDeleteMode;
-                  });
-                },
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 35),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0, vertical: 4.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          width: 2.0, color: Theme.of(context).primaryColor),
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    child: Wrap(
-                        children: _isDeleteMode
-                            ? [
-                                Text(historyItem,
-                                    style: const TextStyle(fontSize: 14)),
-                                GestureDetector(
-                                    onTap: () {
-                                      if (_isDeleteMode) {
-                                        notifier.remove(historyItem);
-                                      } else {
-                                        widget.setText(historyItem);
-                                        // widget.controller.text = historyItem;
-                                      }
-                                    },
-                                    child: const Icon(Icons.close, size: 12))
-                              ]
-                            : [
-                                Text(historyItem,
-                                    style: const TextStyle(fontSize: 14))
-                              ]),
-                  ),
-                )),
-          );
-        }).toList(),
-      ),
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      scrollDirection: Axis.horizontal,
+      children: notifier.history.take(20).map((historyItem) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+          child: GestureDetector(
+              // onTap: () {
+              //   if (_isDeleteMode) {
+              //     notifier.remove(historyItem);
+              //   } else {
+              //     widget.setText(historyItem);
+              //   }
+              // },
+              onLongPress: () {
+                setState(() {
+                  _isDeleteMode = !_isDeleteMode;
+                });
+              },
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 35),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      width: 1.5, color: Theme.of(context).primaryColor),
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                ),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(historyItem, style: const TextStyle(fontSize: 13)),
+                      if (_isDeleteMode)
+                        GestureDetector(
+                          onTap: () {
+                            if (_isDeleteMode) {
+                              notifier.remove(historyItem);
+                            } else {
+                              widget.setText(historyItem);
+                            }
+                          },
+                          child: const Icon(Icons.close, size: 12),
+                        ),
+                    ]),
+              )),
+        );
+      }).toList(),
     );
   }
 }

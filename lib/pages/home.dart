@@ -542,10 +542,11 @@ class MyHomePageState extends State<MyHomePage> {
       pinned: true,
       snap: true,
       // stretch: true,
-      collapsedHeight: 60,
-      expandedHeight: 85,
+      // collapsedHeight: 56,
+      expandedHeight: 90,
       flexibleSpace: FlexibleSpaceBar(
-        background: Padding(
+        background: Container(
+          constraints: const BoxConstraints(maxHeight: 28),
           padding: const EdgeInsets.only(top: 62.0),
           child: SearchBarWithHistoryChips(
             setText: (item) {
