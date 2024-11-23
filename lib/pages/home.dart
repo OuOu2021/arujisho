@@ -181,6 +181,17 @@ class MyHomePageState extends State<MyHomePage> {
                 controller: _scrollController,
                 slivers: [
                   _buildSliverAppBar(context),
+                  SliverPersistentHeader(
+                    pinned: false,
+                    floating: true,
+                    delegate: _StickyHeaderDelegate(
+                      child: HistoryChips(
+                        setText: (item) {
+                          _setSearchContent(item);
+                        },
+                      ),
+                    ),
+                  ),
                   ListenableBuilder(
                     listenable: _controller,
                     builder: (BuildContext ctx, _) {
@@ -494,16 +505,13 @@ class MyHomePageState extends State<MyHomePage> {
           filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
           child: Container(
             color: Colors.transparent,
-            constraints: const BoxConstraints(maxHeight: 30),
-            padding: const EdgeInsets.only(
-                top: 80.0, left: 10.0, right: 10.0, bottom: 6.0),
-            child: HistoryChips(
-              setText: (item) {
-                _setSearchContent(item);
-              },
-            ),
           ),
         ),
+        title: const Text(
+          "ある辞書",
+        ),
+        centerTitle: true,
+        expandedTitleScale: 1.3,
       ),
       actions: [
         IconButton(
@@ -515,10 +523,6 @@ class MyHomePageState extends State<MyHomePage> {
           iconSize: 24,
         )
       ],
-      title: const Text(
-        "ある辞書",
-      ),
-      centerTitle: true,
       backgroundColor:
           Theme.of(context).colorScheme.primaryContainer.withOpacity(0.7),
       surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
@@ -526,5 +530,26 @@ class MyHomePageState extends State<MyHomePage> {
       scrolledUnderElevation: 2.0,
       elevation: 0.0,
     );
+  }
+}
+
+class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _StickyHeaderDelegate({required this.child});
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  double get maxExtent => 30.0;
+  @override
+  double get minExtent => 0.0;
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
   }
 }
