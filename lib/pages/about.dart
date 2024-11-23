@@ -20,12 +20,6 @@ class AboutPage extends StatelessWidget {
               '作者: emc2314, OuOu2021',
               style: TextStyle(fontSize: 18),
             ),
-            // const SizedBox(height: 10),
-            // const Text(
-            //   // TODO: 找原作者确定开源协议
-            //   'Version: ${await getAppVersion()}',
-            //   style: TextStyle(fontSize: 18),
-            // ),
             const SizedBox(height: 10),
             const Text(
               // TODO: 找原作者确定开源协议

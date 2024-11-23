@@ -1,5 +1,3 @@
-import 'package:arujisho/pages/about.dart';
-import 'package:arujisho/pages/home.dart';
 import 'package:arujisho/providers/display_item_notifier.dart';
 import 'package:arujisho/providers/extended_item_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';

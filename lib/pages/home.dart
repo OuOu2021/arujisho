@@ -10,14 +10,12 @@ import 'package:arujisho/providers/extended_item_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/widgets/dictionary_term.dart';
-import 'package:arujisho/widgets/infinite_list.dart';
 import 'package:arujisho/pages/word_detail_page.dart';
 import 'package:arujisho/widgets/infinite_sliver_list.dart';
 import 'package:arujisho/widgets/search_bar_with_history_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 import 'package:clipboard_listener/clipboard_listener.dart';
@@ -535,7 +533,7 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   SliverAppBar _buildSliverAppBar(BuildContext context) {
-    final history = Provider.of<SearchHistoryNotifier>(context);
+    // final history = Provider.of<SearchHistoryNotifier>(context);
     return SliverAppBar(
       floating: true,
       pinned: true,
