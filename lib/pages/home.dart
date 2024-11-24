@@ -209,14 +209,16 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           pinned: true,
                           floating: true,
                           delegate: _StickyHeaderDelegate(
-                            vsync: this,
-                            minHeight: 70.0,
-                            maxHeight: 120.0,
-                            child: HistoryChips(
-                              padding: const EdgeInsets.only(top: 85),
-                              setText: (item) {
-                                _setSearchContent(item);
-                              },
+                            // vsync: this,
+                            minHeight: 125.0,
+                            maxHeight: 125.0,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 100.0),
+                              child: HistoryChips(
+                                setText: (item) {
+                                  _setSearchContent(item);
+                                },
+                              ),
                             ),
                           ),
                         ),
@@ -577,13 +579,13 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double minHeight;
   final double maxHeight;
-  @override
-  final TickerProvider vsync;
+  // @override
+  // final TickerProvider vsync;
   _StickyHeaderDelegate({
     required this.child,
     required this.minHeight,
     required this.maxHeight,
-    required this.vsync,
+    // required this.vsync,
   });
 
   @override
@@ -598,13 +600,13 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => minHeight;
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return true;
+    return false;
   }
 
-  @override
-  FloatingHeaderSnapConfiguration get snapConfiguration =>
-      FloatingHeaderSnapConfiguration(
-        curve: Curves.linear,
-        duration: const Duration(milliseconds: 150),
-      );
+  // @override
+  // FloatingHeaderSnapConfiguration get snapConfiguration =>
+  //     FloatingHeaderSnapConfiguration(
+  //         // curve: Curves.linear,
+  //         // duration: const Duration(milliseconds: 150),
+  //         );
 }
