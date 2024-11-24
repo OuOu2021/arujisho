@@ -213,7 +213,8 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                             minHeight: 125.0,
                             maxHeight: 125.0,
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 100.0),
+                              padding: const EdgeInsets.only(
+                                  top: 100.0, left: 8.0, right: 8.0),
                               child: HistoryChips(
                                 setText: (item) {
                                   _setSearchContent(item);
