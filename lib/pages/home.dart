@@ -183,22 +183,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     NestedScrollView.sliverOverlapAbsorberHandleFor(context),
                 sliver: _buildSliverAppBar(context, innerBoxIsScrolled),
               ),
-              if (Provider.of<SearchHistoryNotifier>(context).isNotEmpty)
-                SliverPersistentHeader(
-                  pinned: true,
-                  floating: true,
-                  delegate: _StickyHeaderDelegate(
-                    vsync: this,
-                    minHeight: 70.0,
-                    maxHeight: 120.0,
-                    child: HistoryChips(
-                      padding: const EdgeInsets.only(top: 85),
-                      setText: (item) {
-                        _setSearchContent(item);
-                      },
-                    ),
-                  ),
-                ),
+              // _buildSliverAppBar(context, innerBoxIsScrolled),
             ],
             body: Builder(
               builder: (BuildContext context) {
@@ -218,6 +203,23 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       //   handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
                       //       context),
                       // ),
+                      if (Provider.of<SearchHistoryNotifier>(context)
+                          .isNotEmpty)
+                        SliverPersistentHeader(
+                          pinned: true,
+                          floating: true,
+                          delegate: _StickyHeaderDelegate(
+                            vsync: this,
+                            minHeight: 70.0,
+                            maxHeight: 120.0,
+                            child: HistoryChips(
+                              padding: const EdgeInsets.only(top: 85),
+                              setText: (item) {
+                                _setSearchContent(item);
+                              },
+                            ),
+                          ),
+                        ),
 
                       ListenableBuilder(
                         listenable: _controller,
@@ -469,34 +471,39 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 alignment: Alignment.bottomCenter,
                 child: BottomAppBar(
                   color: Colors.transparent,
-                  // height: 80,
-                  child: Column(
-                    verticalDirection: VerticalDirection.up,
-                    children: [
-                      ClipRRect(
-                        // 匹配searchBar的默认圆角大小
-                        borderRadius: BorderRadius.circular(28.0),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
-                          child: SearchBar(
-                              leading: const Padding(
-                                  padding: EdgeInsets.only(left: 8.0),
-                                  child: Icon(Icons.search, size: 20)),
-                              backgroundColor: WidgetStatePropertyAll(
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer
-                                      .withOpacity(.7)),
-                              side: WidgetStatePropertyAll(BorderSide(
-                                  width: 2.0,
-                                  color: Theme.of(context).primaryColor)),
-                              elevation: const WidgetStatePropertyAll(0.0),
-                              hintText: "言葉を入力して検索する",
-                              controller: _controller,
-                              trailing: searchBarTrailing),
+                  height: 80,
+                  child: ClipRRect(
+                    // 匹配searchBar的默认圆角大小
+                    borderRadius: BorderRadius.circular(32.0),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
+                      child: SearchBar(
+                        leading: const Padding(
+                            padding: EdgeInsets.only(left: 8.0),
+                            child: Icon(Icons.search, size: 20)),
+                        backgroundColor: WidgetStatePropertyAll(
+                          Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withOpacity(.7),
                         ),
-                      )
-                    ],
+                        side: WidgetStatePropertyAll(
+                          BorderSide(
+                            width: 2.0,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.5),
+                          ),
+                        ),
+                        padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: 6.0)),
+                        elevation: const WidgetStatePropertyAll(0.0),
+                        hintText: "言葉を入力して検索する",
+                        controller: _controller,
+                        trailing: searchBarTrailing,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -505,20 +512,14 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 20.0),
                   child: AnimatedOpacity(
-                    opacity: showScrollToTopButton ? 1.0 : 0.0, // 使用透明度控制显隐
-                    duration: const Duration(milliseconds: 300), // 动画时长
+                    opacity: showScrollToTopButton ? 0.9 : 0.0,
+                    duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
-                    child: Visibility(
-                      // visible: showScrollToTopButton,
-                      child: Opacity(
-                        opacity: 0.92,
-                        child: FloatingActionButton(
-                          onPressed: () {
-                            if (showScrollToTopButton) _scrollToTop();
-                          },
-                          child: const Icon(Icons.arrow_upward),
-                        ),
-                      ),
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        if (showScrollToTopButton) _scrollToTop();
+                      },
+                      child: const Icon(Icons.arrow_upward),
                     ),
                   ),
                 ),
@@ -549,23 +550,24 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           "ある辞書",
         ),
         centerTitle: true,
-        expandedTitleScale: 1.3,
+        expandedTitleScale: 1.5,
       ),
       actions: [
-        IconButton(
-          onPressed: () {
-            Provider.of<SearchHistoryNotifier>(context, listen: false).clear();
-          },
-          tooltip: '履歴を全部削除',
-          icon: const Icon(Icons.cleaning_services),
-          iconSize: 24,
-        )
+        if (Provider.of<SearchHistoryNotifier>(context).isNotEmpty)
+          IconButton(
+            onPressed: () {
+              Provider.of<SearchHistoryNotifier>(context, listen: false)
+                  .clear();
+            },
+            tooltip: '履歴を全部削除',
+            icon: const Icon(Icons.cleaning_services),
+            iconSize: 24,
+          )
       ],
-      backgroundColor:
-          Theme.of(context).colorScheme.primaryContainer.withOpacity(0.7),
-      surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
-      shadowColor: Theme.of(context).colorScheme.primaryContainer,
-      scrolledUnderElevation: 2.0,
+      backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+      // surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
+      shadowColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      scrolledUnderElevation: 4.0,
       elevation: 0.0,
     );
   }
@@ -603,6 +605,6 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   FloatingHeaderSnapConfiguration get snapConfiguration =>
       FloatingHeaderSnapConfiguration(
         curve: Curves.linear,
-        duration: const Duration(milliseconds: 100),
+        duration: const Duration(milliseconds: 150),
       );
 }
