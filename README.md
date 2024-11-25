@@ -23,14 +23,10 @@
 ## [Technical Details](docs/technical-details.md)
 
 ## TODO
-- optimize performance
-  - interrupt useless query
-- better history system
-  - remember tile expansion status
-  - refactor code
-  - use sliding to switch between history pages
+- [x] optimize performance
+- [x] better history system
 - optimize furigana display
 - ios REGEX support
 - full-width/half-width unification
 - dictionary sequences and allow disable
-- deep link
+- [x] deep link

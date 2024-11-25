@@ -13,9 +13,8 @@ import 'package:arujisho/widgets/infinite_sliver_list.dart';
 import 'package:arujisho/widgets/history_chips.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 import 'package:clipboard_listener/clipboard_listener.dart';
@@ -79,13 +78,27 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialInput);
+
+    _controller = TextEditingController();
     _controller.addListener(() {
       setState(() {
         _search(0);
       });
     });
-    _search(0);
+
+    if (widget.initialInput == null) {
+      Future.microtask(() async {
+        final prefs = await SharedPreferences.getInstance();
+        if (prefs.containsKey('searchHistory')) {
+          final history = prefs.getStringList('searchHistory')!;
+          _controller.text = history.firstOrNull ?? 'help[';
+        }
+      });
+    } else {
+      _controller.text = widget.initialInput ?? 'help[';
+    }
+    // _search(0);
+
     ClipboardListener.addListener(_cpListener);
     _scrollController = ScrollController(initialScrollOffset: 0);
     _scrollController.addListener(_scrollListener);
@@ -159,7 +172,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         onPressed: () => _controller.clear(),
       ));
     }
-
+    final historyNotifier = Provider.of<SearchHistoryNotifier>(context);
     return WillPopScope(
       onWillPop: () async {
         // final historyNotifier = Provider.of<SearchHistoryNotifier>(context, listen: false);
@@ -177,11 +190,51 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             controller: _scrollController,
             floatHeaderSlivers: true,
             headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) => [
+                (BuildContext context, bool innerBoxIsScrolled) => <Widget>[
               SliverOverlapAbsorber(
                 handle:
                     NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                sliver: _buildSliverAppBar(context, innerBoxIsScrolled),
+                sliver: SliverAppBar(
+                  // stretch: true,
+                  floating: true,
+                  pinned: true,
+                  snap: true,
+                  expandedHeight: 80,
+                  forceElevated: innerBoxIsScrolled,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: BackdropFilter(
+                      filter:
+                          ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
+                      child: Container(
+                        color: Colors.transparent,
+                      ),
+                    ),
+                    // stretchModes: [StretchMode.fadeTitle],
+                    title: const Text(
+                      "ある辞書",
+                    ),
+                    centerTitle: true,
+                    expandedTitleScale: 1.5,
+                  ),
+                  actions: [
+                    if (historyNotifier.isNotEmpty)
+                      IconButton(
+                        onPressed: () {
+                          historyNotifier.clear();
+                        },
+                        tooltip: '履歴を全部削除',
+                        icon: const Icon(Icons.cleaning_services),
+                        iconSize: 24,
+                      )
+                  ],
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                  // surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
+                  shadowColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  scrolledUnderElevation: 4.0,
+                  elevation: 0.0,
+                ),
               ),
               // _buildSliverAppBar(context, innerBoxIsScrolled),
             ],
@@ -195,7 +248,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   child: CustomScrollView(
                     // physics: const NeverScrollableScrollPhysics(),
                     // controller: _scrollController,
-                    slivers: [
+                    slivers: <Widget>[
                       // header是SliverAppBar是不需要显式写Injector
 
                       // SliverOverlapInjector(
@@ -203,8 +256,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       //   handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
                       //       context),
                       // ),
-                      if (Provider.of<SearchHistoryNotifier>(context)
-                          .isNotEmpty)
+                      if (historyNotifier.isNotEmpty)
                         SliverPersistentHeader(
                           pinned: true,
                           floating: true,
@@ -409,10 +461,6 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                       Text("${item['yomikata']}$pitchData"),
                                   trailing: Text((item['freqRank']).toString()),
                                   onTap: () {
-                                    final historyNotifier =
-                                        Provider.of<SearchHistoryNotifier>(
-                                            context,
-                                            listen: false);
                                     historyNotifier.remove(_controller.text);
                                     historyNotifier.addToHead(_controller.text);
                                     showModalBottomSheet(
@@ -533,47 +581,6 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       ),
     );
   }
-
-  SliverAppBar _buildSliverAppBar(
-      BuildContext context, bool innerBoxIsScrolled) {
-    return SliverAppBar(
-      floating: true,
-      pinned: true,
-      snap: true,
-      expandedHeight: 80,
-      forceElevated: innerBoxIsScrolled,
-      flexibleSpace: FlexibleSpaceBar(
-        background: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
-          child: Container(
-            color: Colors.transparent,
-          ),
-        ),
-        title: const Text(
-          "ある辞書",
-        ),
-        centerTitle: true,
-        expandedTitleScale: 1.5,
-      ),
-      actions: [
-        if (Provider.of<SearchHistoryNotifier>(context).isNotEmpty)
-          IconButton(
-            onPressed: () {
-              Provider.of<SearchHistoryNotifier>(context, listen: false)
-                  .clear();
-            },
-            tooltip: '履歴を全部削除',
-            icon: const Icon(Icons.cleaning_services),
-            iconSize: 24,
-          )
-      ],
-      backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.8),
-      // surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
-      shadowColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      scrolledUnderElevation: 4.0,
-      elevation: 0.0,
-    );
-  }
 }
 
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -603,6 +610,10 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
     return false;
   }
+
+  // @override
+  // OverScrollHeaderStretchConfiguration get stretchConfiguration =>
+  //     OverScrollHeaderStretchConfiguration();
 
   // @override
   // FloatingHeaderSnapConfiguration get snapConfiguration =>
