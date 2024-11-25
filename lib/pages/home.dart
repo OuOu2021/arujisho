@@ -257,25 +257,25 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       //   handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
                       //       context),
                       // ),
-                      if (historyNotifier.isNotEmpty)
-                        SliverPersistentHeader(
-                          pinned: true,
-                          floating: true,
-                          delegate: _StickyHeaderDelegate(
-                            // vsync: this,
-                            minHeight: 125.0,
-                            maxHeight: 125.0,
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 100.0, left: 8.0, right: 8.0),
-                              child: HistoryChips(
-                                setText: (item) {
-                                  _setSearchContent(item);
-                                },
-                              ),
+                      // if (historyNotifier.isNotEmpty)
+                      SliverPersistentHeader(
+                        pinned: true,
+                        floating: true,
+                        delegate: _StickyHeaderDelegate(
+                          // vsync: this,
+                          minHeight: 125.0,
+                          maxHeight: 125.0,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                                top: 100.0, left: 8.0, right: 8.0),
+                            child: HistoryChips(
+                              setText: (item) {
+                                _setSearchContent(item);
+                              },
                             ),
                           ),
                         ),
+                      ),
 
                       ListenableBuilder(
                         listenable: _controller,
