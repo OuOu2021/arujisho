@@ -34,6 +34,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late TextEditingController _controller;
   bool showScrollToTopButton = false;
   late ScrollController _scrollController;
+  bool isStart = true;
 
   int _searchMode = 0;
   static Database? _db;
@@ -453,6 +454,16 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                     ? item['word']
                                     : item['origForm'];
 
+                                if (index == 0 &&
+                                    isStart &&
+                                    widget.initialInput != null) {
+                                  isStart = false;
+                                  historyNotifier.remove(_controller.text);
+                                  historyNotifier.addToHead(_controller.text);
+                                  showDetailedWordInModalBottomSheet(context,
+                                      word, item, imi, expandedItemCount);
+                                }
+
                                 return ListTile(
                                   title: Text(word == item['orig']
                                       ? word
@@ -463,43 +474,8 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                   onTap: () {
                                     historyNotifier.remove(_controller.text);
                                     historyNotifier.addToHead(_controller.text);
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      builder: (_) => WordDetailPage(
-                                        word: word == item['orig']
-                                            ? word
-                                            : '$word →〔${item['orig']}〕',
-                                        idex: item["idex"],
-                                        yomikata: item["yomikata"],
-                                        freqRank: item["freqRank"],
-                                        details: List.from(imi.keys)
-                                            .asMap()
-                                            .entries
-                                            .map<List<Widget>>((s) {
-                                          final index1 = s.key;
-                                          final dictName = s.value;
-                                          return List<List<Widget>>.from(
-                                            imi[dictName]
-                                                .asMap()
-                                                .entries
-                                                .map((entry) {
-                                              // final index2 = entry.key;
-                                              final simi = entry.value;
-                                              return <Widget>[
-                                                DictionaryTerm(
-                                                  dictName: dictName,
-                                                  imi: simi,
-                                                  queryWord: _setSearchContent,
-                                                  initialExpanded: index1 <
-                                                      expandedItemCount,
-                                                )
-                                              ];
-                                            }),
-                                          ).reduce((a, b) => a + b);
-                                        }).reduce((a, b) => a + b),
-                                      ),
-                                    );
+                                    showDetailedWordInModalBottomSheet(context,
+                                        word, item, imi, expandedItemCount);
                                   },
                                 );
                               },
@@ -578,6 +554,42 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             ],
           ),
         ]),
+      ),
+    );
+  }
+
+  void showDetailedWordInModalBottomSheet(
+      BuildContext context,
+      word,
+      Map<String, dynamic> item,
+      Map<String, dynamic> imi,
+      int expandedItemCount) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => WordDetailPage(
+        word: word == item['orig'] ? word : '$word →〔${item['orig']}〕',
+        idex: item["idex"],
+        yomikata: item["yomikata"],
+        freqRank: item["freqRank"],
+        details: List.from(imi.keys).asMap().entries.map<List<Widget>>((s) {
+          final index1 = s.key;
+          final dictName = s.value;
+          return List<List<Widget>>.from(
+            imi[dictName].asMap().entries.map((entry) {
+              // final index2 = entry.key;
+              final simi = entry.value;
+              return <Widget>[
+                DictionaryTerm(
+                  dictName: dictName,
+                  imi: simi,
+                  queryWord: _setSearchContent,
+                  initialExpanded: index1 < expandedItemCount,
+                )
+              ];
+            }),
+          ).reduce((a, b) => a + b);
+        }).reduce((a, b) => a + b),
       ),
     );
   }
