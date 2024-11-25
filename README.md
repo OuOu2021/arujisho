@@ -25,8 +25,9 @@
 ## TODO
 - [x] optimize performance
 - [x] better history system
-- optimize furigana display
-- ios REGEX support
-- full-width/half-width unification
-- dictionary sequences and allow disable
+- [ ] optimize furigana display
+- [ ] ios REGEX support
+- [ ] full-width/half-width unification
+- [ ] dictionary sequences and allow disable
 - [x] deep link
+- [ ] decouple the home page from the search process
