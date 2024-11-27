@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'dart:ui';
 
-import 'package:arujisho/cjconvert.dart';
+import 'package:arujisho/models/word.dart';
 import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
-import 'package:arujisho/widgets/dictionary_term.dart';
-import 'package:arujisho/pages/word_detail_page.dart';
+import 'package:arujisho/utils/dictionary_util.dart';
+import 'package:arujisho/widgets/exception_term.dart';
 import 'package:arujisho/widgets/home_drawer.dart';
 import 'package:arujisho/widgets/infinite_sliver_list.dart';
 import 'package:arujisho/widgets/history_chips.dart';
@@ -36,7 +35,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late ScrollController _scrollController;
   bool isStart = true;
 
-  int _searchMode = 0;
+  int _minRank = 0;
   static Database? _db;
 
   Future<Database> get database async {
@@ -51,7 +50,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   /// 搜索新值前，处理搜索历史
   Future<void> _search(int mode) async {
-    _searchMode = mode;
+    _minRank = mode;
   }
 
   void _setSearchContent(String text) {
@@ -155,7 +154,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   onChanged: (value) {
                     final v = int.tryParse(value);
                     if (v != null && v > 0) {
-                      setState(() => _searchMode = v);
+                      setState(() => _minRank = v);
                     }
                   },
                   decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
@@ -293,134 +292,6 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                               ),
                             )));
                           } else {
-                            final searchData = _controller.text
-                                .replaceAll("\\pc", "\\p{Han}")
-                                .replaceAll("\\ph", "\\p{Hiragana}")
-                                .replaceAll("\\pk", "\\p{Katakana}")
-                                .split('')
-                                .map<String>(
-                                    (c) => cjdc.containsKey(c) ? cjdc[c]! : c)
-                                .join();
-                            Future<List<Map<String, dynamic>>> queryAuto(
-                                int nextIndex, int pageSize) async {
-                              if (nextIndex % pageSize != 0) return [];
-
-                              final db = await database;
-                              String searchField = 'word';
-                              String method = "MATCH";
-                              List<Map<String, dynamic>> result = [];
-                              final searchQuery = searchData.toLowerCase();
-
-                              if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
-                                searchField = 'romaji';
-                              } else if (RegExp(r'^[ぁ-ゖー]+$')
-                                  .hasMatch(searchQuery)) {
-                                searchField = 'yomikata';
-                              } else if (RegExp(r'[\.\+\[\]\*\^\$\?]')
-                                  .hasMatch(searchQuery)) {
-                                method = 'REGEXP';
-                              } else if (RegExp(r'[_%]')
-                                  .hasMatch(searchQuery)) {
-                                method = 'LIKE';
-                              }
-
-                              try {
-                                if (method == "MATCH") {
-                                  result = List.of(await db.rawQuery(
-                                    'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                                    'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                                    'FROM (imis JOIN (SELECT * FROM jpdc '
-                                    'WHERE ($searchField MATCH "$searchQuery*" OR r$searchField '
-                                    'MATCH "${String.fromCharCodes(searchQuery.runes.toList().reversed)}*") '
-                                    '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
-                                    'ORDER BY _rowid_ LIMIT $nextIndex, $pageSize'
-                                    ') AS tt ON tt.idex=imis._rowid_)',
-                                  ));
-                                } else {
-                                  result = List.of(await db.rawQuery(
-                                    'SELECT tt.word,tt.yomikata,tt.pitchData,'
-                                    'tt.origForm,tt.freqRank,tt.idex,tt.romaji,imis.imi,imis.orig '
-                                    'FROM (imis JOIN (SELECT * FROM jpdc '
-                                    'WHERE (word $method "$searchQuery" '
-                                    'OR yomikata $method "$searchQuery" '
-                                    'OR romaji $method "$searchQuery") '
-                                    '${(_searchMode > 0 ? "AND _rowid_ >=$_searchMode" : "")} '
-                                    'ORDER BY _rowid_ LIMIT $nextIndex,$pageSize'
-                                    ') AS tt ON tt.idex=imis._rowid_)',
-                                  ));
-                                }
-
-                                result = result.map((qRow) {
-                                  final map = <String, dynamic>{};
-                                  qRow.forEach(
-                                      (key, value) => map[key] = value);
-                                  return map;
-                                }).toList();
-
-                                int balancedWeight(
-                                    Map<String, dynamic> item, int bLen) {
-                                  return (item['freqRank'] *
-                                          (item[searchField].startsWith(
-                                                      searchQuery) &&
-                                                  _searchMode == 0
-                                              ? 100
-                                              : 500) *
-                                          pow(
-                                              1.5 +
-                                                  item['yomikata'].length /
-                                                      bLen,
-                                              _searchMode == 0 ? 2.5 : 0))
-                                      .round();
-                                }
-
-                                int bLen = 1 << 31;
-                                for (var w in result) {
-                                  if (w['yomikata'].length < bLen) {
-                                    bLen = w['yomikata'].length;
-                                  }
-                                }
-                                result.sort((a, b) => balancedWeight(a, bLen)
-                                    .compareTo(balancedWeight(b, bLen)));
-                                return result;
-                              } catch (e) {
-                                return nextIndex == 0
-                                    ? [
-                                        {
-                                          'word': 'EXCEPTION',
-                                          'yomikata': '以下の説明をご覧ください',
-                                          'pitchData': '',
-                                          'freqRank': -1,
-                                          'idex': -1,
-                                          'romaji': '',
-                                          'orig': 'EXCEPTION',
-                                          'origForm': '',
-                                          'imi': jsonEncode({
-                                            'ヘルプ': [
-                                              "LIKE 検索:\n"
-                                                  "    _  任意の1文字\n"
-                                                  "    %  任意の0文字以上の文字列\n"
-                                                  "\n"
-                                                  "REGEX 検索:\n"
-                                                  "    .  任意の1文字\n"
-                                                  "    .*  任意の0文字以上の文字列\n"
-                                                  "    .+  任意の1文字以上の文字列\n"
-                                                  "    \\pc	任意漢字\n"
-                                                  "    \\ph	任意平仮名\n"
-                                                  "    \\pk	任意片仮名\n"
-                                                  "    []	候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"
-                                                  "\n"
-                                                  "例えば：\n"
-                                                  " \"ta%_eru\" は、食べる、訪ねる、立ち上げる 等\n"
-                                                  " \"[\\pc][\\pc\\ph]+る\" は、出来る、聞こえる、取り入れる 等\n"
-                                            ],
-                                            'Debug': [e.toString()],
-                                          }),
-                                        }
-                                      ]
-                                    : [];
-                              }
-                            }
-
                             final itemCountNotifier =
                                 Provider.of<ItemCountNotifier>(context,
                                     listen: false);
@@ -429,58 +300,64 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                 itemCountNotifier.displayItemCount;
                             final expandedItemCount =
                                 itemCountNotifier.expandedItemCount;
-                            body = InfiniteSliverList<Map<String, dynamic>>(
-                              // itemExtent: 50.0,
-                              onRequest: queryAuto,
-                              itemBuilder: (context, item, index) {
-                                final imiTmp = jsonDecode(item['imi'])
-                                    as Map<String, dynamic>;
+                            try {
+                              body = InfiniteSliverList<Word>(
+                                // itemExtent: 50.0,
+                                onRequest: (nextIndex, pageSize) async {
+                                  final db = await database;
+                                  return DictionaryUtil.getWords(
+                                      db,
+                                      _controller.text,
+                                      nextIndex,
+                                      pageSize,
+                                      _minRank);
+                                },
+                                itemBuilder: (context, item, index) {
+                                  final pitchData = item.pitchData != ''
+                                      ? jsonDecode(item.pitchData)
+                                          .map((x) => x <= 20
+                                              ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x]
+                                              : '?')
+                                          .toList()
+                                          .join()
+                                      : '';
+                                  final word = item.origForm == ''
+                                      ? item.word
+                                      : item.origForm;
 
-                                final imi = {
-                                  for (var entry
-                                      in imiTmp.entries.take(displayCount))
-                                    entry.key: entry.value
-                                };
-
-                                final pitchData = item['pitchData'] != ''
-                                    ? jsonDecode(item['pitchData'])
-                                        .map((x) => x <= 20
-                                            ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x]
-                                            : '?')
-                                        .toList()
-                                        .join()
-                                    : '';
-                                final word = item['origForm'] == ''
-                                    ? item['word']
-                                    : item['origForm'];
-
-                                if (index == 0 &&
-                                    isStart &&
-                                    widget.initialInput != null) {
-                                  isStart = false;
-                                  historyNotifier.remove(_controller.text);
-                                  historyNotifier.addToHead(_controller.text);
-                                  showDetailedWordInModalBottomSheet(context,
-                                      word, item, imi, expandedItemCount);
-                                }
-
-                                return ListTile(
-                                  title: Text(word == item['orig']
-                                      ? word
-                                      : '$word →〔${item['orig']}〕'),
-                                  subtitle:
-                                      Text("${item['yomikata']}$pitchData"),
-                                  trailing: Text((item['freqRank']).toString()),
-                                  onTap: () {
+                                  if (index == 0 &&
+                                      isStart &&
+                                      widget.initialInput != null) {
+                                    isStart = false;
                                     historyNotifier.remove(_controller.text);
                                     historyNotifier.addToHead(_controller.text);
-                                    showDetailedWordInModalBottomSheet(context,
-                                        word, item, imi, expandedItemCount);
-                                  },
-                                );
-                              },
-                              key: ValueKey('${searchData}_$_searchMode'),
-                            );
+                                    item.showDetailedWordInModalBottomSheet(
+                                        context, item, expandedItemCount);
+                                  }
+
+                                  return ListTile(
+                                    title: Text(word == item.orig
+                                        ? word
+                                        : '$word →〔${item.orig}〕'),
+                                    subtitle:
+                                        Text("${item.yomikata}$pitchData"),
+                                    trailing: Text((item.freqRank).toString()),
+                                    onTap: () {
+                                      historyNotifier.remove(_controller.text);
+                                      historyNotifier
+                                          .addToHead(_controller.text);
+                                      item.showDetailedWordInModalBottomSheet(
+                                          context, item, expandedItemCount);
+                                    },
+                                  );
+                                },
+                                key: ValueKey('${_controller.text}_$_minRank'),
+                              );
+                            } catch (e) {
+                              return SliverToBoxAdapter(
+                                child: ExceptionTerm(e: e as Exception),
+                              );
+                            }
                           }
                           return body;
                         },
@@ -554,42 +431,6 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             ],
           ),
         ]),
-      ),
-    );
-  }
-
-  void showDetailedWordInModalBottomSheet(
-      BuildContext context,
-      word,
-      Map<String, dynamic> item,
-      Map<String, dynamic> imi,
-      int expandedItemCount) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => WordDetailPage(
-        word: word == item['orig'] ? word : '$word →〔${item['orig']}〕',
-        idex: item["idex"],
-        yomikata: item["yomikata"],
-        freqRank: item["freqRank"],
-        details: List.from(imi.keys).asMap().entries.map<List<Widget>>((s) {
-          final index1 = s.key;
-          final dictName = s.value;
-          return List<List<Widget>>.from(
-            imi[dictName].asMap().entries.map((entry) {
-              // final index2 = entry.key;
-              final simi = entry.value;
-              return <Widget>[
-                DictionaryTerm(
-                  dictName: dictName,
-                  imi: simi,
-                  queryWord: _setSearchContent,
-                  initialExpanded: index1 < expandedItemCount,
-                )
-              ];
-            }),
-          ).reduce((a, b) => a + b);
-        }).reduce((a, b) => a + b),
       ),
     );
   }

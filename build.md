@@ -9,3 +9,5 @@
 9. `rustup target add armv7-linux-androideabi`
 10. `rustup target install aarch64-linux-android`
 11. `cargo install cargo-ndk`
+12. `dart run build_runner build`
+13. `flutter build apk --release`

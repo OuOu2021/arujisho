@@ -8,17 +8,18 @@ import 'package:kana_kit/kana_kit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
+/// List里的一项
 class DictionaryTerm extends StatefulWidget {
   final String dictName;
   final String imi;
-  final Function(String) queryWord;
+  final Function(String)? queryWord;
   final bool initialExpanded;
 
   const DictionaryTerm({
     super.key,
     required this.dictName,
     required this.imi,
-    required this.queryWord,
+    this.queryWord,
     this.initialExpanded = false,
   });
 
@@ -139,13 +140,18 @@ class DictionaryTermState extends State<DictionaryTerm> {
                                 return RubyTextData(token['surface']!);
                               } else if (_kanaKit.isKana(token['surface']!)) {
                                 return RubyTextData(token['surface']!,
-                                    onTap: () =>
-                                        widget.queryWord(token['norm']!));
+                                    onTap: () {
+                                  if (widget.queryWord != null) {
+                                    widget.queryWord!(token['norm']!);
+                                  }
+                                });
                               }
                               return RubyTextData(token['surface']!,
-                                  ruby: token['reading'],
-                                  onTap: () =>
-                                      widget.queryWord(token['norm']!));
+                                  ruby: token['reading'], onTap: () {
+                                if (widget.queryWord != null) {
+                                  widget.queryWord!(token['norm']!);
+                                }
+                              });
                             }).toList(),
                           ))
                       .toList(),

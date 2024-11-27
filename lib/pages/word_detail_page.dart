@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:just_audio/just_audio.dart';
 
 class WordDetailPage extends StatefulWidget {
-  final String word;
+  final String wordTitle;
   final List<Widget> details;
   final int freqRank;
   final String yomikata;
@@ -16,7 +16,7 @@ class WordDetailPage extends StatefulWidget {
 
   const WordDetailPage(
       {super.key,
-      required this.word,
+      required this.wordTitle,
       required this.details,
       required this.freqRank,
       required this.yomikata,
@@ -58,7 +58,7 @@ class WordDetailState extends State<WordDetailPage> {
                     Expanded(
                       flex: 20,
                       child: Text(
-                        widget.word,
+                        widget.wordTitle,
                         style: Theme.of(context).textTheme.headlineMedium,
                         softWrap: true,
                         maxLines: 2,
@@ -69,7 +69,7 @@ class WordDetailState extends State<WordDetailPage> {
                     Text((widget.freqRank + 1).toString()),
                     FutureBuilder(
                         future: Provider.of<TtsCacheProvider>(context).hatsuon(
-                            word: widget.word,
+                            word: widget.wordTitle,
                             idex: widget.idex,
                             yomikata: widget.yomikata),
                         builder: (context, AsyncSnapshot<String?> snapshot) {
