@@ -105,7 +105,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _scrollListener() {
-    if (_scrollController.offset > 1) {
+    if (_scrollController.offset > 100) {
       if (!showScrollToTopButton) {
         setState(() => showScrollToTopButton = true);
       }
@@ -199,7 +199,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   floating: true,
                   pinned: true,
                   snap: true,
-                  expandedHeight: 80,
+                  expandedHeight: 75,
                   forceElevated: innerBoxIsScrolled,
                   flexibleSpace: FlexibleSpaceBar(
                     background: BackdropFilter(
@@ -214,7 +214,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       "ある辞書",
                     ),
                     centerTitle: true,
-                    expandedTitleScale: 1.5,
+                    expandedTitleScale: 1.4,
                   ),
                   actions: [
                     if (historyNotifier.isNotEmpty)
@@ -262,11 +262,11 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                         floating: true,
                         delegate: _StickyHeaderDelegate(
                           // vsync: this,
-                          minHeight: 125.0,
-                          maxHeight: 125.0,
+                          minHeight: 115.0,
+                          maxHeight: 115.0,
                           child: Padding(
                             padding: const EdgeInsets.only(
-                                top: 100.0, left: 8.0, right: 8.0),
+                                top: 90.0, left: 8.0, right: 8.0),
                             child: HistoryChips(
                               setText: (item) {
                                 _setSearchContent(item);

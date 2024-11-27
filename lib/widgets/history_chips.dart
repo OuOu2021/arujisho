@@ -16,28 +16,11 @@ class HistoryChips extends StatefulWidget {
 }
 
 class HistoryChipsState extends State<HistoryChips> {
-  final FocusNode _focusNode = FocusNode();
   bool _isDeleteMode = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        setState(() {
-          _isDeleteMode = false;
-        });
-      } else {
-        // 这里我们需要等待一段时间来检测是否真的离开了Chip区域
-        Future.delayed(const Duration(milliseconds: 50), () {
-          if (!_focusNode.hasFocus) {
-            setState(() {
-              _isDeleteMode = false;
-            });
-          }
-        });
-      }
-    });
   }
 
   @override
