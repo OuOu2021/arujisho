@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:arujisho/cjconvert.dart';
 import 'package:arujisho/models/word.dart';
 import 'package:sqflite/sqflite.dart';

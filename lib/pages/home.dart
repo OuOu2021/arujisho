@@ -104,7 +104,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _scrollListener() {
-    if (_scrollController.offset > 100) {
+    if (_scrollController.offset > 1) {
       if (!showScrollToTopButton) {
         setState(() => showScrollToTopButton = true);
       }
