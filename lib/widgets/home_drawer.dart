@@ -32,36 +32,32 @@ Widget buildDrawer(BuildContext context) {
           ),
           subtitle: Consumer<ThemeNotifier>(
             builder: (context, themeProvider, child) {
-              return DropdownButtonFormField<ThemeMode>(
-                value: themeProvider.themeMode,
-                items: const [
-                  DropdownMenuItem<ThemeMode>(
-                    value: ThemeMode.system,
-                    child: Text(
-                      'システムに従う',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  DropdownMenuItem<ThemeMode>(
-                    value: ThemeMode.light,
-                    child: Text(
-                      '明るいモード',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  DropdownMenuItem<ThemeMode>(
-                    value: ThemeMode.dark,
-                    child: Text(
-                      '暗いモード',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                  }
-                },
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: DropdownButtonFormField<ThemeMode>(
+                  // dropdownColor: Theme.of(context).colorScheme.surface,
+                  value: themeProvider.themeMode,
+                  items: [
+                    (ThemeMode.system, 'システムに従う'),
+                    (ThemeMode.light, '明るいモード'),
+                    (ThemeMode.dark, '暗いモード')
+                  ]
+                      .map(
+                        (pair) => DropdownMenuItem<ThemeMode>(
+                          value: pair.$1,
+                          child: Text(
+                            pair.$2,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (ThemeMode? value) {
+                    if (value != null) {
+                      themeProvider.setThemeMode(value);
+                    }
+                  },
+                ),
               );
             },
           ),

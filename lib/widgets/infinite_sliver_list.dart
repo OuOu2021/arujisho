@@ -21,7 +21,7 @@ class InfiniteSliverList<T> extends StatefulWidget {
 }
 
 class InfiniteSliverListState<T> extends State<InfiniteSliverList<T>> {
-  static const _pageSize = 10;
+  static const _pageSize = 20;
   final PagingController<int, T> _pagingController =
       PagingController(firstPageKey: 0);
   // late ScrollController _scrollController; // 用于监听滚动

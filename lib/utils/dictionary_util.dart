@@ -1,16 +1,19 @@
 import 'package:arujisho/cjconvert.dart';
 import 'package:arujisho/models/word.dart';
+import 'package:logger/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DictionaryUtil {
   static Future<List<Word>> getWords(Database db, String query, int nextIndex,
       int pageSize, int minRank) async {
+    Logger().d(
+        "getWords: $query, from $nextIndex to ${nextIndex + pageSize}, rank from $minRank");
     if (nextIndex % pageSize != 0) return [];
     final searchData = handleQuery(query);
 
     String searchField = 'word';
     String method = "MATCH";
-    List<Word> result = [];
+
     final searchQuery = searchData.toLowerCase();
 
     if (RegExp(r'^[a-z]+$').hasMatch(searchQuery)) {
@@ -23,6 +26,7 @@ class DictionaryUtil {
       method = 'LIKE';
     }
 
+    List<Word> result = [];
     result = switch (method) {
       "MATCH" => (await db.rawQuery(
           'SELECT tt.word,tt.yomikata,tt.pitchData,'

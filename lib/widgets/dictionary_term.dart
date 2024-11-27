@@ -156,10 +156,16 @@ class DictionaryTermState extends State<DictionaryTerm> {
                           ))
                       .toList(),
                 )
-              : SelectableText(widget.imi,
+              : SelectableText(
+                  widget.imi,
                   style: const TextStyle(fontSize: 12),
-                  toolbarOptions:
-                      const ToolbarOptions(copy: true, selectAll: false)),
+
+                  // toolbarOptions:
+                  //     const ToolbarOptions(copy: true, selectAll: false),
+                  // contextMenuBuilder:(context, editableTextState) {
+                  //   return
+                  // },
+                ),
         ),
       ),
     );

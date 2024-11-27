@@ -80,9 +80,9 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
     _controller = TextEditingController();
     _controller.addListener(() {
-      setState(() {
-        _search(0);
-      });
+      // setState(() {
+      _search(0);
+      // });
     });
 
     if (widget.initialInput == null) {
@@ -164,261 +164,247 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           child: const Icon(BootstrapIcons.sort_down_alt),
         ),
       ),
+      if (_controller.text.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear, size: 20),
+          onPressed: () => _controller.clear(),
+        )
     ];
-    if (_controller.text.isNotEmpty) {
-      searchBarTrailing.add(IconButton(
-        icon: const Icon(Icons.clear, size: 20),
-        onPressed: () => _controller.clear(),
-      ));
-    }
     final historyNotifier = Provider.of<SearchHistoryNotifier>(context);
-    return WillPopScope(
-      onWillPop: () async {
-        // final historyNotifier = Provider.of<SearchHistoryNotifier>(context, listen: false);
-        // if (historyNotifier.isEmpty) return true;
-        // final temp = historyNotifier.last;
-        // historyNotifier.removeLast();
-        // _setSearchContent(temp);
-        return true;
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        drawer: buildDrawer(context),
-        body: Stack(children: [
-          NestedScrollView(
-            controller: _scrollController,
-            floatHeaderSlivers: true,
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) => <Widget>[
-              SliverOverlapAbsorber(
-                handle:
-                    NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                sliver: SliverAppBar(
-                  // stretch: true,
-                  floating: true,
-                  pinned: true,
-                  snap: true,
-                  expandedHeight: 75,
-                  forceElevated: innerBoxIsScrolled,
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: BackdropFilter(
-                      filter:
-                          ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
-                      child: Container(
-                        color: Colors.transparent,
-                      ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      drawer: buildDrawer(context),
+      body: Stack(children: [
+        NestedScrollView(
+          controller: _scrollController,
+          floatHeaderSlivers: true,
+          headerSliverBuilder:
+              (BuildContext context, bool innerBoxIsScrolled) => <Widget>[
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: SliverAppBar(
+                // stretch: true,
+                floating: true,
+                pinned: true,
+                snap: true,
+                expandedHeight: 75,
+                forceElevated: innerBoxIsScrolled,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: BackdropFilter(
+                    filter:
+                        ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0), // 设置模糊强度
+                    child: Container(
+                      color: Colors.transparent,
                     ),
-                    // stretchModes: [StretchMode.fadeTitle],
-                    title: const Text(
-                      "ある辞書",
-                    ),
-                    centerTitle: true,
-                    expandedTitleScale: 1.4,
                   ),
-                  actions: [
-                    if (historyNotifier.isNotEmpty)
-                      IconButton(
-                        onPressed: () {
-                          historyNotifier.clear();
-                        },
-                        tooltip: '履歴を全部削除',
-                        icon: const Icon(Icons.cleaning_services),
-                        iconSize: 24,
-                      )
-                  ],
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surface.withOpacity(0.8),
-                  // surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
-                  shadowColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
-                  scrolledUnderElevation: 4.0,
-                  elevation: 0.0,
+                  // stretchModes: [StretchMode.fadeTitle],
+                  title: const Text(
+                    "ある辞書",
+                  ),
+                  centerTitle: true,
+                  expandedTitleScale: 1.4,
                 ),
+                actions: [
+                  if (historyNotifier.isNotEmpty)
+                    IconButton(
+                      onPressed: () {
+                        historyNotifier.clear();
+                      },
+                      tooltip: '履歴を全部削除',
+                      icon: const Icon(Icons.cleaning_services),
+                      iconSize: 24,
+                    )
+                ],
+                backgroundColor:
+                    Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                // surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
+                shadowColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                scrolledUnderElevation: 4.0,
+                elevation: 0.0,
               ),
-              // _buildSliverAppBar(context, innerBoxIsScrolled),
-            ],
-            body: Builder(
-              builder: (BuildContext context) {
-                final innerScrollController =
-                    PrimaryScrollController.of(context);
+            ),
+            // _buildSliverAppBar(context, innerBoxIsScrolled),
+          ],
+          body: Builder(
+            builder: (BuildContext context) {
+              final innerScrollController = PrimaryScrollController.of(context);
 
-                return CupertinoScrollbar(
-                  controller: innerScrollController,
-                  child: CustomScrollView(
-                    // physics: const NeverScrollableScrollPhysics(),
-                    // controller: _scrollController,
-                    slivers: <Widget>[
-                      // header是SliverAppBar是不需要显式写Injector
+              return CupertinoScrollbar(
+                controller: innerScrollController,
+                child: CustomScrollView(
+                  // physics: const NeverScrollableScrollPhysics(),
+                  // controller: _scrollController,
+                  slivers: <Widget>[
+                    // header是SliverAppBar是不需要显式写Injector
 
-                      // SliverOverlapInjector(
-                      //   // 这里注入SliverOverlapAbsorberHandle来处理重叠
-                      //   handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
-                      //       context),
-                      // ),
-                      // if (historyNotifier.isNotEmpty)
-                      SliverPersistentHeader(
-                        pinned: true,
-                        floating: true,
-                        delegate: _StickyHeaderDelegate(
-                          // vsync: this,
-                          minHeight: 115.0,
-                          maxHeight: 115.0,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                                top: 90.0, left: 8.0, right: 8.0),
-                            child: HistoryChips(
-                              setText: (item) {
-                                _setSearchContent(item);
-                              },
-                            ),
+                    // SliverOverlapInjector(
+                    //   // 这里注入SliverOverlapAbsorberHandle来处理重叠
+                    //   handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                    //       context),
+                    // ),
+                    // if (historyNotifier.isNotEmpty)
+                    SliverPersistentHeader(
+                      pinned: true,
+                      floating: true,
+                      delegate: _StickyHeaderDelegate(
+                        // vsync: this,
+                        minHeight: 120.0,
+                        maxHeight: 120.0,
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                              top: 95.0, left: 8.0, right: 8.0),
+                          child: HistoryChips(
+                            setText: (item) {
+                              _setSearchContent(item);
+                            },
                           ),
                         ),
                       ),
+                    ),
 
-                      ListenableBuilder(
-                        listenable: _controller,
-                        builder: (BuildContext ctx, _) {
-                          switch (_controller.text) {
-                            case "":
-                              return const SliverToBoxAdapter(
-                                  child: Center(
-                                      child: Padding(
-                                padding: EdgeInsets.only(top: 200.0),
-                                child: Text(
-                                  "ご参考になりましたら幸いです",
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                              )));
-                            case "help" || "?":
-                              return const SliverToBoxAdapter(
-                                child: SearchHelpCard(),
-                              );
-                            default:
-                              return InfiniteSliverList<Word>(
-                                // itemExtent: 50.0,
-                                onRequest: (nextIndex, pageSize) async {
-                                  final db = await database;
-                                  return DictionaryUtil.getWords(
-                                      db,
-                                      _controller.text,
-                                      nextIndex,
-                                      pageSize,
-                                      _minRank);
-                                },
-                                itemBuilder: (context, item, index) {
-                                  final pitchData = item.pitchData != ''
-                                      ? jsonDecode(item.pitchData)
-                                          .map((x) => x <= 20
-                                              ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x]
-                                              : '?')
-                                          .toList()
-                                          .join()
-                                      : '';
-                                  final word = item.origForm == ''
-                                      ? item.word
-                                      : item.origForm;
+                    ListenableBuilder(
+                      listenable: _controller,
+                      builder: (BuildContext ctx, _) {
+                        switch (_controller.text) {
+                          case "":
+                            return const SliverToBoxAdapter(
+                                child: Center(
+                                    child: Padding(
+                              padding: EdgeInsets.only(top: 200.0),
+                              child: Text(
+                                "ご参考になりましたら幸いです",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            )));
+                          case "help" || "?":
+                            return const SliverToBoxAdapter(
+                              child: SearchHelpCard(),
+                            );
+                          default:
+                            return InfiniteSliverList<Word>(
+                              // itemExtent: 50.0,
+                              onRequest: (nextIndex, pageSize) async {
+                                final db = await database;
+                                return DictionaryUtil.getWords(
+                                  db,
+                                  _controller.text,
+                                  nextIndex,
+                                  pageSize,
+                                  _minRank,
+                                );
+                              },
+                              itemBuilder: (context, item, index) {
+                                final pitchData = item.pitchData.isNotEmpty
+                                    ? jsonDecode(item.pitchData)
+                                        .map((x) => x <= 20
+                                            ? '⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[x]
+                                            : '?')
+                                        .toList()
+                                        .join()
+                                    : '';
+                                final word = item.origForm.isEmpty
+                                    ? item.word
+                                    : item.origForm;
 
-                                  if (index == 0 &&
-                                      isStart &&
-                                      widget.initialInput != null) {
-                                    isStart = false;
+                                if (index == 0 &&
+                                    isStart &&
+                                    widget.initialInput != null) {
+                                  isStart = false;
+                                  historyNotifier.remove(_controller.text);
+                                  historyNotifier.addToHead(_controller.text);
+                                  item.showDetailedWordInModalBottomSheet(
+                                      context, item);
+                                }
+
+                                return ListTile(
+                                  title: Text(word == item.orig
+                                      ? word
+                                      : '$word →〔${item.orig}〕'),
+                                  subtitle: Text("${item.yomikata}$pitchData"),
+                                  trailing: Text((item.freqRank).toString()),
+                                  onTap: () {
                                     historyNotifier.remove(_controller.text);
                                     historyNotifier.addToHead(_controller.text);
                                     item.showDetailedWordInModalBottomSheet(
                                         context, item);
-                                  }
-
-                                  return ListTile(
-                                    title: Text(word == item.orig
-                                        ? word
-                                        : '$word →〔${item.orig}〕'),
-                                    subtitle:
-                                        Text("${item.yomikata}$pitchData"),
-                                    trailing: Text((item.freqRank).toString()),
-                                    onTap: () {
-                                      historyNotifier.remove(_controller.text);
-                                      historyNotifier
-                                          .addToHead(_controller.text);
-                                      item.showDetailedWordInModalBottomSheet(
-                                          context, item);
-                                    },
-                                  );
-                                },
-                                key: ValueKey('${_controller.text}_$_minRank'),
-                              );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          Column(
-            verticalDirection: VerticalDirection.up,
-            children: [
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: BottomAppBar(
-                  color: Colors.transparent,
-                  height: 80,
-                  child: ClipRRect(
-                    // 匹配searchBar的默认圆角大小
-                    borderRadius: BorderRadius.circular(32.0),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
-                      child: SearchBar(
-                        leading: const Padding(
-                            padding: EdgeInsets.only(left: 8.0),
-                            child: Icon(Icons.search, size: 20)),
-                        backgroundColor: WidgetStatePropertyAll(
-                          Theme.of(context)
-                              .colorScheme
-                              .primaryContainer
-                              .withOpacity(.7),
-                        ),
-                        side: WidgetStatePropertyAll(
-                          BorderSide(
-                            width: 2.0,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.5),
-                          ),
-                        ),
-                        padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 6.0)),
-                        elevation: const WidgetStatePropertyAll(0.0),
-                        hintText: "言葉を入力して検索する",
-                        controller: _controller,
-                        trailing: searchBarTrailing,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 20.0),
-                  child: AnimatedOpacity(
-                    opacity: showScrollToTopButton ? 0.9 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        if (showScrollToTopButton) _scrollToTop();
+                                  },
+                                );
+                              },
+                              key: ValueKey('${_controller.text}_$_minRank'),
+                            );
+                        }
                       },
-                      child: const Icon(Icons.arrow_upward),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        Column(
+          verticalDirection: VerticalDirection.up,
+          children: [
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: BottomAppBar(
+                color: Colors.transparent,
+                height: 80,
+                child: ClipRRect(
+                  // 匹配searchBar的默认圆角大小
+                  borderRadius: BorderRadius.circular(32.0),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 2.0),
+                    child: SearchBar(
+                      leading: const Padding(
+                          padding: EdgeInsets.only(left: 8.0),
+                          child: Icon(Icons.search, size: 20)),
+                      backgroundColor: WidgetStatePropertyAll(
+                        Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withOpacity(.7),
+                      ),
+                      side: WidgetStatePropertyAll(
+                        BorderSide(
+                          width: 2.0,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.5),
+                        ),
+                      ),
+                      padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 6.0)),
+                      elevation: const WidgetStatePropertyAll(0.0),
+                      hintText: "言葉を入力して検索する",
+                      controller: _controller,
+                      trailing: searchBarTrailing,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-        ]),
-      ),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20.0),
+                child: AnimatedOpacity(
+                  opacity: showScrollToTopButton ? 0.9 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      if (showScrollToTopButton) _scrollToTop();
+                    },
+                    child: const Icon(Icons.arrow_upward),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ]),
     );
   }
 }
