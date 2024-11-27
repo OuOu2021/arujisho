@@ -41,13 +41,18 @@ class InfiniteSliverListState<T> extends State<InfiniteSliverList<T>> {
   }
 
   Future<void> _fetchPage(int pageKey) async {
-    final newItems = await widget.onRequest(pageKey, _pageSize);
-    final isLastPage = newItems.length < _pageSize;
-    if (isLastPage) {
-      _pagingController.appendLastPage(newItems);
-    } else {
-      final nextPageKey = pageKey + newItems.length;
-      _pagingController.appendPage(newItems, nextPageKey);
+    try {
+      final newItems = await widget.onRequest(pageKey, _pageSize);
+      final isLastPage = newItems.length < _pageSize;
+      if (isLastPage) {
+        _pagingController.appendLastPage(newItems);
+      } else {
+        final nextPageKey = pageKey + newItems.length;
+        _pagingController.appendPage(newItems, nextPageKey);
+      }
+    } catch (e) {
+      _pagingController.error = e;
+      return;
     }
   }
 
@@ -66,6 +71,13 @@ class InfiniteSliverListState<T> extends State<InfiniteSliverList<T>> {
         noMoreItemsIndicatorBuilder: (context) => const Padding(
           padding: EdgeInsets.only(top: 10, bottom: 120),
           child: Center(child: Text('以上です')),
+        ),
+        firstPageErrorIndicatorBuilder: (context) => Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Text(
+            "Invalid input exception: \n ${_pagingController.error}",
+            style: const TextStyle(fontSize: 16),
+          ),
         ),
         animateTransitions: true,
       ),

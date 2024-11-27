@@ -21,9 +21,9 @@ class SearchHelpCard extends StatelessWidget {
               text: TextSpan(
                 style: Theme.of(context).textTheme.bodyLarge,
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: "LIKE 検索:\n",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black,
@@ -32,9 +32,9 @@ class SearchHelpCard extends StatelessWidget {
                   _buildIndentedText("_  任意の1文字\n"),
                   _buildIndentedText("%  任意の0文字以上の文字列\n"),
                   const TextSpan(text: "\n"),
-                  TextSpan(
+                  const TextSpan(
                     text: "REGEX 検索:\n",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black,
@@ -48,9 +48,9 @@ class SearchHelpCard extends StatelessWidget {
                   _buildIndentedText("\\\\pk 任意片仮名\n"),
                   _buildIndentedText("[] 候補。[]で括られた中の文字は、その中のどれか１つに合致する訳です\n"),
                   const TextSpan(text: "\n"),
-                  TextSpan(
+                  const TextSpan(
                     text: "例えば：\n",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.black,

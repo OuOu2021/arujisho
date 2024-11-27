@@ -289,7 +289,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                   style: TextStyle(fontSize: 18),
                                 ),
                               )));
-                            case "help":
+                            case "help" || "?":
                               return const SliverToBoxAdapter(
                                 child: SearchHelpCard(),
                               );
