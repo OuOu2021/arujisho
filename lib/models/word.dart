@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:arujisho/pages/word_detail_page.dart';
+import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/widgets/dictionary_term.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:provider/provider.dart';
 
 part 'word.g.dart';
 
@@ -61,22 +63,25 @@ class Word {
   }
 
   void showDetailedWordInModalBottomSheet(
-      BuildContext context,
-      Word word,
-      // Map<String, dynamic> item,
-      // Map<String, dynamic> imi,
-      int expandedItemCount) {
+    BuildContext context,
+    Word word,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => WordDetailPage(
         wordTitle:
             word.word == word.orig ? word.word : '${word.word} →〔${word.orig}〕',
+        originWord: word.word,
         idex: word.idex,
         yomikata: word.yomikata,
         freqRank: word.freqRank,
-        details:
-            List.from(word.imi.keys).asMap().entries.map<List<Widget>>((s) {
+        details: List.from(word.imi.keys.take(
+                Provider.of<ItemCountNotifier>(context, listen: false)
+                    .displayItemCount))
+            .asMap()
+            .entries
+            .map<List<Widget>>((s) {
           final index1 = s.key;
           final dictName = s.value;
           return List<List<Widget>>.from(
@@ -88,7 +93,9 @@ class Word {
                   dictName: dictName,
                   imi: simi,
                   // queryWord: _setSearchContent,
-                  initialExpanded: index1 < expandedItemCount,
+                  initialExpanded: index1 <
+                      Provider.of<ItemCountNotifier>(context, listen: false)
+                          .expandedItemCount,
                 )
               ];
             }),

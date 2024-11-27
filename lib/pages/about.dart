@@ -32,7 +32,7 @@ class AboutPage extends StatelessWidget {
               const SizedBox(height: 20),
               const Text(
                 // TODO: 找原作者确定开源协议
-                'ヘルプ: input [ in searchBar to get help',
+                'ヘルプ: input \'help\' in searchBar to get help',
                 style: TextStyle(fontSize: 18),
               ),
               const SizedBox(height: 20),

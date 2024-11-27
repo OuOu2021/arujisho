@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:arujisho/models/word.dart';
-import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/utils/dictionary_util.dart';
-import 'package:arujisho/widgets/exception_term.dart';
+import 'package:arujisho/widgets/search_help_card.dart';
 import 'package:arujisho/widgets/home_drawer.dart';
 import 'package:arujisho/widgets/infinite_sliver_list.dart';
 import 'package:arujisho/widgets/history_chips.dart';
@@ -91,11 +90,11 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final prefs = await SharedPreferences.getInstance();
         if (prefs.containsKey('searchHistory')) {
           final history = prefs.getStringList('searchHistory')!;
-          _controller.text = history.firstOrNull ?? 'help[';
+          _controller.text = history.firstOrNull ?? 'help';
         }
       });
     } else {
-      _controller.text = widget.initialInput ?? 'help[';
+      _controller.text = widget.initialInput ?? 'help';
     }
     // _search(0);
 
@@ -279,29 +278,23 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       ListenableBuilder(
                         listenable: _controller,
                         builder: (BuildContext ctx, _) {
-                          Widget body;
-
-                          if (_controller.text.isEmpty) {
-                            body = const SliverToBoxAdapter(
-                                child: Center(
-                                    child: Padding(
-                              padding: EdgeInsets.only(top: 200.0),
-                              child: Text(
-                                "ご参考になりましたら幸いです",
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            )));
-                          } else {
-                            final itemCountNotifier =
-                                Provider.of<ItemCountNotifier>(context,
-                                    listen: false);
-                            // 考虑displayItemCountNotifier的值
-                            final displayCount =
-                                itemCountNotifier.displayItemCount;
-                            final expandedItemCount =
-                                itemCountNotifier.expandedItemCount;
-                            try {
-                              body = InfiniteSliverList<Word>(
+                          switch (_controller.text) {
+                            case "":
+                              return const SliverToBoxAdapter(
+                                  child: Center(
+                                      child: Padding(
+                                padding: EdgeInsets.only(top: 200.0),
+                                child: Text(
+                                  "ご参考になりましたら幸いです",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                              )));
+                            case "help":
+                              return const SliverToBoxAdapter(
+                                child: SearchHelpCard(),
+                              );
+                            default:
+                              return InfiniteSliverList<Word>(
                                 // itemExtent: 50.0,
                                 onRequest: (nextIndex, pageSize) async {
                                   final db = await database;
@@ -332,7 +325,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                     historyNotifier.remove(_controller.text);
                                     historyNotifier.addToHead(_controller.text);
                                     item.showDetailedWordInModalBottomSheet(
-                                        context, item, expandedItemCount);
+                                        context, item);
                                   }
 
                                   return ListTile(
@@ -347,19 +340,13 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                       historyNotifier
                                           .addToHead(_controller.text);
                                       item.showDetailedWordInModalBottomSheet(
-                                          context, item, expandedItemCount);
+                                          context, item);
                                     },
                                   );
                                 },
                                 key: ValueKey('${_controller.text}_$_minRank'),
                               );
-                            } catch (e) {
-                              return SliverToBoxAdapter(
-                                child: ExceptionTerm(e: e as Exception),
-                              );
-                            }
                           }
-                          return body;
                         },
                       ),
                     ],

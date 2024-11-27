@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 
 class WordDetailPage extends StatefulWidget {
   final String wordTitle;
+  final String originWord;
   final List<Widget> details;
   final int freqRank;
   final String yomikata;
@@ -20,6 +21,7 @@ class WordDetailPage extends StatefulWidget {
       required this.details,
       required this.freqRank,
       required this.yomikata,
+      required this.originWord,
       required this.idex});
 
   @override
@@ -69,7 +71,7 @@ class WordDetailState extends State<WordDetailPage> {
                     Text((widget.freqRank + 1).toString()),
                     FutureBuilder(
                         future: Provider.of<TtsCacheProvider>(context).hatsuon(
-                            word: widget.wordTitle,
+                            word: widget.originWord,
                             idex: widget.idex,
                             yomikata: widget.yomikata),
                         builder: (context, AsyncSnapshot<String?> snapshot) {
