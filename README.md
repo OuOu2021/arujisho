@@ -32,4 +32,6 @@
 - [ ] full-width/half-width unification
 - [ ] dictionary sequences and allow disable
 - [x] deep link
+  - [ ] sheet view in deep link mode in order to return to source app more easily
 - [ ] decouple the home page from the search process
+- [ ] example sentences from [tatoeba](https://tatoeba.org/)

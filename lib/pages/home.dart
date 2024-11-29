@@ -29,37 +29,37 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
-  late TextEditingController _controller;
+  late TextEditingController textController;
   bool showScrollToTopButton = false;
-  late ScrollController _scrollController;
+  late ScrollController scrollController;
   bool isStart = true;
 
-  int _minRank = 0;
-  static Database? _db;
+  int minRank = 0;
+  static Database? db;
 
   Future<Database> get database async {
-    if (_db != null) return _db!;
+    if (db != null) return db!;
 
     final databasesPath = await getDatabasesPath();
     final p = path.join(databasesPath, "arujisho.db");
 
-    _db = await openDatabase(p, readOnly: true);
-    return _db!;
+    db = await openDatabase(p, readOnly: true);
+    return db!;
   }
 
   /// 搜索新值前，处理搜索历史
-  Future<void> _search(int mode) async {
-    _minRank = mode;
+  Future<void> search(int mode) async {
+    minRank = mode;
   }
 
-  void _setSearchContent(String text) {
-    _controller.value = TextEditingValue(
+  void setSearchContent(String text) {
+    textController.value = TextEditingValue(
         text: text,
         selection:
             TextSelection.fromPosition(TextPosition(offset: text.length)));
   }
 
-  Future<void> _cpListener() async {
+  Future<void> cpListener() async {
     final clipboardData = await Clipboard.getData('text/plain');
     if (clipboardData == null) return; // 如果剪贴板中没有数据，直接返回
 
@@ -69,19 +69,19 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     const int maxTextLength = 15; // 设置一个最大文本长度阈值
     if (text.length > maxTextLength) return; // 如果粘贴的文本长度超过阈值，直接返回
 
-    if (text == _controller.text) return; // 如果粘贴的内容与当前输入框内容相同，直接返回
+    if (text == textController.text) return; // 如果粘贴的内容与当前输入框内容相同，直接返回
 
-    _setSearchContent(text); // 处理粘贴的文本内容
+    setSearchContent(text); // 处理粘贴的文本内容
   }
 
   @override
   void initState() {
     super.initState();
 
-    _controller = TextEditingController();
-    _controller.addListener(() {
+    textController = TextEditingController();
+    textController.addListener(() {
       // setState(() {
-      _search(0);
+      search(0);
       // });
     });
 
@@ -90,21 +90,21 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final prefs = await SharedPreferences.getInstance();
         if (prefs.containsKey('searchHistory')) {
           final history = prefs.getStringList('searchHistory')!;
-          _controller.text = history.firstOrNull ?? 'help';
+          textController.text = history.firstOrNull ?? 'help';
         }
       });
     } else {
-      _controller.text = widget.initialInput ?? 'help';
+      textController.text = widget.initialInput ?? 'help';
     }
     // _search(0);
 
-    ClipboardListener.addListener(_cpListener);
-    _scrollController = ScrollController(initialScrollOffset: 0);
-    _scrollController.addListener(_scrollListener);
+    ClipboardListener.addListener(cpListener);
+    scrollController = ScrollController(initialScrollOffset: 0);
+    scrollController.addListener(scrollListener);
   }
 
-  void _scrollListener() {
-    if (_scrollController.offset > 1) {
+  void scrollListener() {
+    if (scrollController.offset > 1) {
       if (!showScrollToTopButton) {
         setState(() => showScrollToTopButton = true);
       }
@@ -116,8 +116,8 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     // Logger().d('${_scrollController.position.pixels}}');
   }
 
-  void _scrollToTop() {
-    _scrollController.animateTo(
+  void scrollToTop() {
+    scrollController.animateTo(
       0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
@@ -126,57 +126,22 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _controller.dispose();
-    ClipboardListener.removeListener(_cpListener);
-    _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
+    textController.dispose();
+    ClipboardListener.removeListener(cpListener);
+    scrollController.removeListener(scrollListener);
+    scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    var searchBarTrailing = <Widget>[
-      Padding(
-        padding: const EdgeInsets.only(right: 8.0),
-        child: InkWell(
-          onTap: () => _search(-1),
-          onLongPress: () => showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('頻度コントロール'),
-                content: TextField(
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                  ],
-                  onChanged: (value) {
-                    final v = int.tryParse(value);
-                    if (v != null && v > 0) {
-                      setState(() => _minRank = v);
-                    }
-                  },
-                  decoration: const InputDecoration(hintText: "頻度ランク（正整数）"),
-                ),
-              );
-            },
-          ),
-          child: const Icon(BootstrapIcons.sort_down_alt),
-        ),
-      ),
-      if (_controller.text.isNotEmpty)
-        IconButton(
-          icon: const Icon(Icons.clear, size: 20),
-          onPressed: () => _controller.clear(),
-        )
-    ];
     final historyNotifier = Provider.of<SearchHistoryNotifier>(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
-      drawer: buildDrawer(context),
+      drawer: const HomeDrawer(),
       body: Stack(children: [
         NestedScrollView(
-          controller: _scrollController,
+          controller: scrollController,
           floatHeaderSlivers: true,
           headerSliverBuilder:
               (BuildContext context, bool innerBoxIsScrolled) => <Widget>[
@@ -247,7 +212,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     SliverPersistentHeader(
                       pinned: true,
                       floating: true,
-                      delegate: _StickyHeaderDelegate(
+                      delegate: StickyHeaderDelegate(
                         // vsync: this,
                         minHeight: 120.0,
                         maxHeight: 120.0,
@@ -256,7 +221,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                               top: 95.0, left: 8.0, right: 8.0),
                           child: HistoryChips(
                             setText: (item) {
-                              _setSearchContent(item);
+                              setSearchContent(item);
                             },
                           ),
                         ),
@@ -264,9 +229,9 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     ),
 
                     ListenableBuilder(
-                      listenable: _controller,
+                      listenable: textController,
                       builder: (BuildContext ctx, _) {
-                        switch (_controller.text) {
+                        switch (textController.text) {
                           case "":
                             return const SliverToBoxAdapter(
                                 child: Center(
@@ -288,10 +253,10 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                 final db = await database;
                                 return DictionaryUtil.getWords(
                                   db,
-                                  _controller.text,
+                                  textController.text,
                                   nextIndex,
                                   pageSize,
-                                  _minRank,
+                                  minRank,
                                 );
                               },
                               itemBuilder: (context, item, index) {
@@ -311,8 +276,9 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                     isStart &&
                                     widget.initialInput != null) {
                                   isStart = false;
-                                  historyNotifier.remove(_controller.text);
-                                  historyNotifier.addToHead(_controller.text);
+                                  historyNotifier.remove(textController.text);
+                                  historyNotifier
+                                      .addToHead(textController.text);
                                   item.showDetailedWordInModalBottomSheet(
                                       context, item);
                                 }
@@ -324,14 +290,15 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                                   subtitle: Text("${item.yomikata}$pitchData"),
                                   trailing: Text((item.freqRank).toString()),
                                   onTap: () {
-                                    historyNotifier.remove(_controller.text);
-                                    historyNotifier.addToHead(_controller.text);
+                                    historyNotifier.remove(textController.text);
+                                    historyNotifier
+                                        .addToHead(textController.text);
                                     item.showDetailedWordInModalBottomSheet(
                                         context, item);
                                   },
                                 );
                               },
-                              key: ValueKey('${_controller.text}_$_minRank'),
+                              key: ValueKey('${textController.text}_$minRank'),
                             );
                         }
                       },
@@ -378,8 +345,45 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                           EdgeInsets.symmetric(horizontal: 6.0)),
                       elevation: const WidgetStatePropertyAll(0.0),
                       hintText: "言葉を入力して検索する",
-                      controller: _controller,
-                      trailing: searchBarTrailing,
+                      controller: textController,
+                      trailing: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: InkWell(
+                            onTap: () => search(-1),
+                            onLongPress: () => showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('頻度コントロール'),
+                                  content: TextField(
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                          RegExp("[0-9]"))
+                                    ],
+                                    onChanged: (value) {
+                                      final v = int.tryParse(value);
+                                      if (v != null && v > 0) {
+                                        setState(() => minRank = v);
+                                      }
+                                    },
+                                    decoration: const InputDecoration(
+                                        hintText: "頻度ランク（正整数）"),
+                                  ),
+                                );
+                              },
+                            ),
+                            child: const Icon(BootstrapIcons.sort_down_alt),
+                          ),
+                        ),
+                        if (textController.text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 20),
+                            onPressed: () =>
+                                setState(() => textController.clear()),
+                          )
+                      ],
                     ),
                   ),
                 ),
@@ -395,7 +399,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   curve: Curves.easeInOut,
                   child: FloatingActionButton(
                     onPressed: () {
-                      if (showScrollToTopButton) _scrollToTop();
+                      if (showScrollToTopButton) scrollToTop();
                     },
                     child: const Icon(Icons.arrow_upward),
                   ),
@@ -409,13 +413,13 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 }
 
-class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+class StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double minHeight;
   final double maxHeight;
   // @override
   // final TickerProvider vsync;
-  _StickyHeaderDelegate({
+  StickyHeaderDelegate({
     required this.child,
     required this.minHeight,
     required this.maxHeight,
@@ -436,15 +440,4 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
     return false;
   }
-
-  // @override
-  // OverScrollHeaderStretchConfiguration get stretchConfiguration =>
-  //     OverScrollHeaderStretchConfiguration();
-
-  // @override
-  // FloatingHeaderSnapConfiguration get snapConfiguration =>
-  //     FloatingHeaderSnapConfiguration(
-  //         // curve: Curves.linear,
-  //         // duration: const Duration(milliseconds: 150),
-  //         );
 }
