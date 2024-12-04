@@ -1,14 +1,39 @@
+import 'package:arujisho/providers/db_provider.dart';
 import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/providers/tts_cache_provider.dart';
 import 'package:arujisho/router.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+// Do not interrupt other audio
+Future initAudioService() async {
+  final session = await AudioSession.instance;
+  await session.configure(
+    const AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playback,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.duckOthers,
+      avAudioSessionMode: AVAudioSessionMode.defaultMode,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.media,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
+      androidWillPauseWhenDucked: true,
+    ),
+  );
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // make navigation bar transparent
   SystemChrome.setSystemUIOverlayStyle(
@@ -18,6 +43,9 @@ void main() {
   );
   // make flutter draw behind navigation bar
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  initAudioService();
+
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(
@@ -31,7 +59,10 @@ void main() {
               )),
       Provider<TtsCacheProvider>(
         create: (_) => TtsCacheProvider(),
-      )
+      ),
+      Provider<DbProvider>(
+        create: (context) => DbProvider(),
+      ),
     ],
     child: const MyApp(),
   ));

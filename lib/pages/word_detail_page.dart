@@ -81,16 +81,17 @@ class WordDetailState extends State<WordDetailPage> {
                               icon: snapshot.data == null
                                   ? const Icon(Icons.error_outline)
                                   : const Icon(IcoFontIcons.soundWaveAlt),
-                              onPressed: () {
+                              onPressed: () async{
                                 if (snapshot.data != null) {
                                   DefaultCacheManager()
                                       .getSingleFile(snapshot.data!,
                                           headers: burpHeader)
-                                      .then((res) {
+                                      .then((res) async {
                                     final player = AudioPlayer();
                                     player.setFilePath(res.path);
                                     // player.setVolume(1);
-                                    player.play();
+                                    await player.play();
+                                    // await player.stop();
                                   });
                                 }
                               },

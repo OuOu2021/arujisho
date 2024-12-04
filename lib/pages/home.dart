@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:arujisho/models/word.dart';
+import 'package:arujisho/providers/db_provider.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/utils/dictionary_util.dart';
 import 'package:arujisho/widgets/search_help_card.dart';
@@ -35,17 +36,6 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool isStart = true;
 
   int minRank = 0;
-  static Database? db;
-
-  Future<Database> get database async {
-    if (db != null) return db!;
-
-    final databasesPath = await getDatabasesPath();
-    final p = path.join(databasesPath, "arujisho.db");
-
-    db = await openDatabase(p, readOnly: true);
-    return db!;
-  }
 
   /// 搜索新值前，处理搜索历史
   Future<void> search(int mode) async {
@@ -250,7 +240,9 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                             return InfiniteSliverList<Word>(
                               // itemExtent: 50.0,
                               onRequest: (nextIndex, pageSize) async {
-                                final db = await database;
+                                final db =
+                                    await Provider.of<DbProvider>(context)
+                                        .database;
                                 return DictionaryUtil.getWords(
                                   db,
                                   textController.text,
