@@ -44,7 +44,7 @@ void main() async {
   // make flutter draw behind navigation bar
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  initAudioService();
+  await initAudioService();
 
   runApp(MultiProvider(
     providers: [
