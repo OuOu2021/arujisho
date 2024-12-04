@@ -31,6 +31,20 @@ class WordDetailPage extends StatefulWidget {
 }
 
 class WordDetailState extends State<WordDetailPage> {
+  late AudioPlayer player;
+
+  @override
+  void initState() {
+    super.initState();
+    player = Provider.of<AudioPlayer>(context, listen: false);
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(Object context) {
     return DraggableScrollableSheet(
@@ -87,11 +101,9 @@ class WordDetailState extends State<WordDetailPage> {
                                       .getSingleFile(snapshot.data!,
                                           headers: burpHeader)
                                       .then((res) async {
-                                    final player = AudioPlayer();
                                     player.setFilePath(res.path);
                                     // player.setVolume(1);
                                     await player.play();
-                                    // await player.stop();
                                   });
                                 }
                               },

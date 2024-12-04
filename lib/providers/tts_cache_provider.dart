@@ -73,11 +73,11 @@ class TtsCacheProvider {
             break;
           }
         } catch (_) {
-          return null;
+          // return null;
         }
       }
     } catch (_) {
-      return null;
+      // return null;
     }
     // setState(() => hatsuonLoading = false);
     if (url != null) {

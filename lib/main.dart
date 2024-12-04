@@ -60,9 +60,21 @@ void main() async {
       Provider<TtsCacheProvider>(
         create: (_) => TtsCacheProvider(),
       ),
-      // Provider<DbProvider>(
-      //   create: (context) => DbProvider(),
-      // ),
+      Provider<DbProvider>(
+        create: (context) => DbProvider(),
+      ),
+      Provider<AudioPlayer>(
+        create: (context) {
+          final player = AudioPlayer();
+          player.processingStateStream.listen((state)async {
+            if (state == ProcessingState.completed) {
+              final session = await AudioSession.instance;
+              await session.setActive(false);  // 停用音频会话，恢复其他音频的音量
+            }
+          });
+          return player;
+        },
+      ),
     ],
     child: const MyApp(),
   ));
