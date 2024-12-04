@@ -60,9 +60,9 @@ void main() async {
       Provider<TtsCacheProvider>(
         create: (_) => TtsCacheProvider(),
       ),
-      // Provider<DbProvider>(
-      //   create: (context) => DbProvider(),
-      // ),
+      Provider<DbProvider>(
+        create: (context) => DbProvider(),
+      ),
     ],
     child: const MyApp(),
   ));
