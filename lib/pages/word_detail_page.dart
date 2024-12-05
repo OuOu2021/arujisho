@@ -83,6 +83,7 @@ class WordDetailState extends State<WordDetailPage> {
                     IconButton(
                       icon: const Icon(IcoFontIcons.soundWaveAlt),
                       onPressed: () async {
+                        await tts.stop();
                         if(await tts.isLanguageAvailable("ja-JP")){
                           await tts.setLanguage("ja-JP");
                         }
@@ -97,7 +98,7 @@ class WordDetailState extends State<WordDetailPage> {
                           }
                         }
                         await tts.awaitSpeakCompletion(true);
-                        await tts.speak(widget.originWord);
+                        await tts.speak("<speak><phoneme alphabet=\"yomigana\" ph=\"${widget.yomikata}\">${widget.originWord}</phoneme></speak>");
                       },
                     ),
                     // FutureBuilder(
