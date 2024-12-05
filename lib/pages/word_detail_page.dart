@@ -1,13 +1,7 @@
-import 'package:arujisho/providers/tts_cache_provider.dart';
-import 'package:arujisho/utils/audio_util.dart';
-import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 import 'package:icofont_flutter/icofont_flutter.dart';
-import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
-import 'package:just_audio/just_audio.dart';
 
 class WordDetailPage extends StatefulWidget {
   final String wordTitle;
@@ -34,23 +28,22 @@ class WordDetailPage extends StatefulWidget {
 }
 
 class WordDetailState extends State<WordDetailPage> {
-  late AudioPlayer player;
+  late FlutterTts tts;
 
   @override
   void initState() {
     super.initState();
-    player = AudioPlayer();
+    tts = FlutterTts();
   }
 
   @override
   void dispose() {
-    player.dispose();
+    tts.stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final logger = Provider.of<Logger>(context);
     return DraggableScrollableSheet(
       expand: false, // 初始高度不覆盖整个屏幕
       builder: (context, scrollController) {
@@ -87,54 +80,76 @@ class WordDetailState extends State<WordDetailPage> {
                     ),
                     const Spacer(),
                     Text((widget.freqRank + 1).toString()),
-                    FutureBuilder(
-                        future: Provider.of<TtsCacheProvider>(context).hatsuon(
-                            word: widget.originWord,
-                            idex: widget.idex,
-                            yomikata: widget.yomikata),
-                        builder: (context, AsyncSnapshot<String?> snapshot) {
-                          Widget content;
-                          if (snapshot.hasData) {
-                            content = IconButton(
-                              icon: snapshot.data == null
-                                  ? const Icon(Icons.error_outline)
-                                  : const Icon(IcoFontIcons.soundWaveAlt),
-                              onPressed: () async {
-                                if (snapshot.data != null) {
-                                  DefaultCacheManager()
-                                      .getSingleFile(snapshot.data!,
-                                          headers: burpHeader)
-                                      .then((res) async {
-                                    try {
-                                      final session =
-                                          await AudioSession.instance;
-                                      await initAudioService(session);
-                                      await player.setFilePath(res.path);
-                                      logger.d(
-                                          "sessionisConfigured: ${session.isConfigured}");
-                                      await player.play();
-                                      logger.d("end playing hatsuon");
-                                      // if (await session.setActive(true)) {
-                                      //   logger.d("start playing hatsuon");
-                                      //   await player.play();
-                                      //   await session.setActive(false);
-                                      //   logger.d("end playing hatsuon");
-                                      // }
-                                    } catch (e) {
-                                      logger.d(e);
-                                    }
-                                  });
-                                }
-                              },
+                    IconButton(
+                      icon: const Icon(IcoFontIcons.soundWaveAlt),
+                      onPressed: () async {
+                        if(await tts.isLanguageAvailable("ja-JP")){
+                          await tts.setLanguage("ja-JP");
+                        }
+                        else {
+                          if(context.mounted){
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('日本語のTTSが見つかりませんでした'),
+                                showCloseIcon: true,
+                              ),
                             );
-                          } else {
-                            content = const CircularProgressIndicator();
                           }
-                          return Container(
-                              padding: const EdgeInsets.all(4.0),
-                              width: 45.0,
-                              child: content);
-                        })
+                        }
+                        await tts.awaitSpeakCompletion(true);
+                        await tts.speak(widget.originWord);
+                      },
+                    ),
+                    // FutureBuilder(
+                    //     future: Provider.of<TtsCacheProvider>(context).hatsuon(
+                    //         word: widget.originWord,
+                    //         idex: widget.idex,
+                    //         yomikata: widget.yomikata),
+                    //     builder: (context, AsyncSnapshot<Uri?> snapshot) {
+                    //       Widget content;
+                    //       if (snapshot.hasData) {
+                    //         if (snapshot.data == null) {
+                    //           content = const Icon(Icons.error_sharp);
+                    //         } else {
+                    //           content = IconButton(
+                    //             icon: const Icon(IcoFontIcons.soundWaveAlt),
+                    //             onPressed: () async {
+                    //                 try {
+                    //                   final player = AudioPlayer();
+                    //                   // final session =
+                    //                   //     await AudioSession.instance;
+                    //                   // await initAudioService(session);
+                    //                   // await player.setFilePath(res.path);
+                    //                   // logger.d(
+                    //                   //     "sessionisConfigured: ${session.isConfigured}");
+                    //                   // final audioSource = LockCachingAudioSource(snapshot.data!);
+                    //                   player.setAudioSource(AudioSource.uri(snapshot.data!));
+                    //                   // await player.play();
+                    //                   player.play();
+                    //                   logger.d("end playing hatsuon");
+                    //                   // if (await session.setActive(true)) {
+                    //                   //   logger.d("start playing hatsuon");
+                    //                   //   await player.play();
+                    //                   //   await session.setActive(false);
+                    //                   //   logger.d("end playing hatsuon");
+                    //                   // }
+                    //                 } catch (e) {
+                    //                   logger.e(e.toString());
+                    //                 }
+                    //             },
+                    //           );
+                    //         }
+                    //       } else if (snapshot.hasError) {
+                    //         content = const Icon(Icons.error_outline);
+                    //       } else {
+                    //         content = const CircularProgressIndicator();
+                    //       }
+
+                    //       return Container(
+                    //           padding: const EdgeInsets.all(4.0),
+                    //           width: 45.0,
+                    //           child: content);
+                    //     })
                   ]),
                 ),
                 const SizedBox(height: 16),

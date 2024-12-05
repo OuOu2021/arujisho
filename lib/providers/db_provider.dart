@@ -1,5 +1,3 @@
-import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 

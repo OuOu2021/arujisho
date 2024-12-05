@@ -2,13 +2,11 @@ import 'package:arujisho/providers/db_provider.dart';
 import 'package:arujisho/providers/item_count_notifier.dart';
 import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
-import 'package:arujisho/providers/tts_cache_provider.dart';
 import 'package:arujisho/router.dart';
 import 'package:arujisho/utils/audio_util.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +21,9 @@ void main() async {
   // make flutter draw behind navigation bar
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  final session = await AudioSession.instance;
+  await initAudioService(session);
+
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(
@@ -34,9 +35,9 @@ void main() async {
           create: (_) => Logger(printer: PrettyPrinter(), level: Level.debug
               // filter: DevelopmentFilter(),
               )),
-      Provider<TtsCacheProvider>(
-        create: (_) => TtsCacheProvider(),
-      ),
+      // Provider<TtsCacheProvider>(
+      //   create: (_) => TtsCacheProvider(),
+      // ),
       Provider<DbProvider>(
         create: (context) => DbProvider(),
       ),

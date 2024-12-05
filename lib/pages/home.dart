@@ -14,8 +14,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path/path.dart' as path;
-import 'package:sqflite/sqflite.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
 

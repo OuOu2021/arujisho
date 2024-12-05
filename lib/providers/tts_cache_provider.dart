@@ -1,10 +1,9 @@
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
 import 'package:kana_kit/kana_kit.dart';
+import 'package:logger/logger.dart';
 
 const burpHeader = {
   "Sec-Ch-Ua":
@@ -26,63 +25,47 @@ const burpHeader = {
 
 class TtsCacheProvider {
   static const KanaKit _kanaKit = KanaKit();
-  final Map<int, String?> _cache = {};
 
-  Future<String?> hatsuon(
+  Future<Uri?> hatsuon(
       {required String word,
       required int idex,
       required String yomikata}) async {
-    if (_cache.containsKey(idex)) {
-      return _cache[idex];
-    }
-    String? url;
+        final logger = Logger();
+    Uri? uri;
 
     try {
-      var resp = await http.post(
-        Uri.parse(
-            'https://www.japanesepod101.com/learningcenter/reference/dictionary_post'),
-        headers: burpHeader,
-        body: {
-          "post": "dictionary_reference",
-          "match_type": "exact",
-          "search_query": word,
-          "vulgar": "true"
-        },
-      );
-      var dom = parse(resp.body);
-      for (var row in dom.getElementsByClassName('dc-result-row')) {
-        try {
-          var audio = row.getElementsByTagName('audio')[0];
-          var kana = row.getElementsByClassName('dc-vocab_kana')[0].text;
-          if (_kanaKit.toKatakana(yomikata) == _kanaKit.toKatakana(kana) ||
-              _kanaKit.toHiragana(kana) == yomikata) {
-            url =
-                "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=$word&kana=$kana";
-            // setState(() => hatsuonLoading = true);
-            try {
-              var file = await DefaultCacheManager()
-                  .getSingleFile(url, headers: burpHeader);
-              var hash = await sha256.bind(file.openRead()).first;
-              if (hash.toString() ==
-                  'ae6398b5a27bc8c0a771df6c907ade794be15518174773c58c7c7ddd17098906') {
-                throw const FormatException("NOT IMPLEMENTED");
-              }
-            } catch (_) {
-              url = audio.getElementsByTagName('source')[0].attributes['src'];
-            }
-            break;
-          }
-        } catch (_) {
-          // return null;
-        }
-      }
-    } catch (_) {
-      // return null;
+      // var resp = await http.post(
+      //   Uri.parse(
+      //       'https://www.japanesepod101.com/learningcenter/reference/dictionary_post'),
+      //   headers: burpHeader,
+      //   body: {
+      //     "post": "dictionary_reference",
+      //     "match_type": "exact",
+      //     "search_query": word,
+      //     "vulgar": "true"
+      //   },
+      // );
+      // var dom = parse(resp.body);
+      // for (var row in dom.getElementsByClassName('dc-result-row')) {
+      //   try {
+      //     var audio = row.getElementsByTagName('audio')[0];
+      //     var kana = row.getElementsByClassName('dc-vocab_kana')[0].text;
+      //     if (_kanaKit.toKatakana(yomikata) == _kanaKit.toKatakana(kana) ||
+      //         _kanaKit.toHiragana(kana) == yomikata) {
+      //       uri = Uri.tryParse("https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=$word&kana=$kana");
+      //       break;
+      //     }
+      //   } catch (e) {
+      //     logger.e(e);
+      //   }
+      // }
+      uri = Uri.tryParse("https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=$word");
+    } catch (e) {
+      logger.e(e);
     }
-    // setState(() => hatsuonLoading = false);
-    if (url != null) {
-      _cache[idex] = url;
-      return url;
+    if (uri != null) {
+      logger.d("Hatsuon1: $uri");
+      return uri;
     }
     try {
       var resp = await http.get(Uri.parse("https://forvo.com/word/$word/#ja"),
@@ -97,36 +80,28 @@ class TtsCacheProvider {
       String? match = exp.firstMatch(play)?.group(1);
       if (match != null && match.isNotEmpty) {
         match = utf8.decode(base64.decode(match));
-        url = 'https://audio00.forvo.com/audios/mp3/$match';
+        uri = Uri.parse('https://audio00.forvo.com/audios/mp3/$match');
       } else {
         exp = RegExp(r"Play\(\d+,'[^']+','([^']+)");
         match = exp.firstMatch(play)?.group(1);
         if (match != null) {
           match = utf8.decode(base64.decode(match));
-          url = 'https://audio00.forvo.com/ogg/$match';
+          uri = Uri.parse('https://audio00.forvo.com/ogg/$match');
         }
       }
-    } catch (_) {
+    } catch (e) {
+      logger.e(e);
       return null;
     }
-    if (url != null) {
-      _cache[idex] = url;
-      return url;
+    if (uri != null) {
+      logger.d("Hatsuon1: $uri");
+      return uri;
     }
 
-    if (url != null && url.isNotEmpty) {
+    if (uri != null) {
       // setState(() => hatsuonLoading = true);
-      try {
-        return url;
-      } catch (_) {
-        url = null;
-      }
+      return uri;
     }
-    _cache[idex] = url;
-    return url;
-    // setState(() {
-    //   _cache[idex] = url;
-    //   hatsuonLoading = false;
-    // });
+    return uri;
   }
 }
