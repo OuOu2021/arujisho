@@ -16,7 +16,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
-import 'package:clipboard_listener/clipboard_listener.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +32,7 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late TextEditingController textController;
   bool showScrollToTopButton = false;
   late ScrollController scrollController;
+  late ClipboardStatusNotifier _clipboardStatusNotifier;
   bool isStart = true;
 
   int minRank = 0;
@@ -87,8 +87,8 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       textController.text = widget.initialInput ?? 'help';
     }
     // _search(0);
-
-    ClipboardListener.addListener(cpListener);
+    _clipboardStatusNotifier = ClipboardStatusNotifier();
+    _clipboardStatusNotifier.addListener(cpListener);
     scrollController = ScrollController(initialScrollOffset: 0);
     scrollController.addListener(scrollListener);
   }
@@ -117,7 +117,8 @@ class MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void dispose() {
     textController.dispose();
-    ClipboardListener.removeListener(cpListener);
+    _clipboardStatusNotifier.removeListener(cpListener);
+    _clipboardStatusNotifier.dispose();
     scrollController.removeListener(scrollListener);
     scrollController.dispose();
     super.dispose();

@@ -1,23 +1,3 @@
-buildscript {
-    ext.kotlin_version = '1.9.25'
-    repositories {
-        maven { url 'https://maven.aliyun.com/repository/public/' }
-        maven { url 'https://maven.aliyun.com/repository/spring/'}
-        maven { url 'https://maven.aliyun.com/repository/google/'}
-        maven { url 'https://maven.aliyun.com/repository/gradle-plugin/'}
-        maven { url 'https://maven.aliyun.com/repository/spring-plugin/'}
-        maven { url 'https://maven.aliyun.com/repository/grails-core/'}
-        maven { url 'https://maven.aliyun.com/repository/apache-snapshots/'}
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
 allprojects {
     repositories {
         maven { url 'https://maven.aliyun.com/repository/public/' }
@@ -43,6 +23,15 @@ subprojects {
             project.android {
                 compileSdkVersion 34
                 buildToolsVersion "34.0.0"
+            }
+        }
+    }
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                if (namespace == null) {
+                    namespace project.group
+                }
             }
         }
     }

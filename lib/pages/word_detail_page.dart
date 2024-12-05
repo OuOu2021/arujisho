@@ -1,8 +1,11 @@
 import 'package:arujisho/providers/tts_cache_provider.dart';
+import 'package:arujisho/utils/audio_util.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import 'package:icofont_flutter/icofont_flutter.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -36,7 +39,7 @@ class WordDetailState extends State<WordDetailPage> {
   @override
   void initState() {
     super.initState();
-    player = Provider.of<AudioPlayer>(context, listen: false);
+    player = AudioPlayer();
   }
 
   @override
@@ -46,7 +49,8 @@ class WordDetailState extends State<WordDetailPage> {
   }
 
   @override
-  Widget build(Object context) {
+  Widget build(BuildContext context) {
+    final logger = Provider.of<Logger>(context);
     return DraggableScrollableSheet(
       expand: false, // 初始高度不覆盖整个屏幕
       builder: (context, scrollController) {
@@ -95,15 +99,30 @@ class WordDetailState extends State<WordDetailPage> {
                               icon: snapshot.data == null
                                   ? const Icon(Icons.error_outline)
                                   : const Icon(IcoFontIcons.soundWaveAlt),
-                              onPressed: () async{
+                              onPressed: () async {
                                 if (snapshot.data != null) {
                                   DefaultCacheManager()
                                       .getSingleFile(snapshot.data!,
                                           headers: burpHeader)
                                       .then((res) async {
-                                    player.setFilePath(res.path);
-                                    // player.setVolume(1);
-                                    await player.play();
+                                    try {
+                                      final session =
+                                          await AudioSession.instance;
+                                      await initAudioService(session);
+                                      await player.setFilePath(res.path);
+                                      logger.d(
+                                          "sessionisConfigured: ${session.isConfigured}");
+                                      await player.play();
+                                      logger.d("end playing hatsuon");
+                                      // if (await session.setActive(true)) {
+                                      //   logger.d("start playing hatsuon");
+                                      //   await player.play();
+                                      //   await session.setActive(false);
+                                      //   logger.d("end playing hatsuon");
+                                      // }
+                                    } catch (e) {
+                                      logger.d(e);
+                                    }
                                   });
                                 }
                               },

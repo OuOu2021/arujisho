@@ -4,34 +4,13 @@ import 'package:arujisho/providers/search_history_notifier.dart';
 import 'package:arujisho/providers/theme_notifier.dart';
 import 'package:arujisho/providers/tts_cache_provider.dart';
 import 'package:arujisho/router.dart';
+import 'package:arujisho/utils/audio_util.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-
-// Do not interrupt other audio
-Future initAudioService() async {
-  final session = await AudioSession.instance;
-  await session.configure(
-    const AudioSessionConfiguration(
-      avAudioSessionCategory: AVAudioSessionCategory.playback,
-      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.duckOthers,
-      avAudioSessionMode: AVAudioSessionMode.defaultMode,
-      avAudioSessionRouteSharingPolicy:
-          AVAudioSessionRouteSharingPolicy.defaultPolicy,
-      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
-      androidAudioAttributes: AndroidAudioAttributes(
-        contentType: AndroidAudioContentType.speech,
-        flags: AndroidAudioFlags.none,
-        usage: AndroidAudioUsage.media,
-      ),
-      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
-      androidWillPauseWhenDucked: true,
-    ),
-  );
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,8 +22,6 @@ void main() async {
   );
   // make flutter draw behind navigation bar
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-  await initAudioService();
 
   runApp(MultiProvider(
     providers: [
@@ -62,18 +39,6 @@ void main() async {
       ),
       Provider<DbProvider>(
         create: (context) => DbProvider(),
-      ),
-      Provider<AudioPlayer>(
-        create: (context) {
-          final player = AudioPlayer();
-          player.processingStateStream.listen((state)async {
-            if (state == ProcessingState.completed) {
-              final session = await AudioSession.instance;
-              await session.setActive(false);  // 停用音频会话，恢复其他音频的音量
-            }
-          });
-          return player;
-        },
       ),
     ],
     child: const MyApp(),
