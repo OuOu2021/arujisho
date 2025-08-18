@@ -3,7 +3,10 @@
 [![Codemagic build status](https://api.codemagic.io/apps/62d0c7c9b2128b2e5dbb1002/default-workflow/status_badge.svg)](https://codemagic.io/apps/62d0c7c9b2128b2e5dbb1002/default-workflow/latest_build)
 
 日本語辞書です
+* refreshed:
+![output1](https://github.com/user-attachments/assets/a8faeb4d-cb26-4f64-8dcc-99f69c0c4098)
 
+* old:
 <img src="example.gif">
 
 ## Warnings
